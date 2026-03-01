@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
-            background-color: #1a1a1a;
+            background-color: #121212; /* Fondo más oscuro para resaltar */
             color: white;
             display: flex;
             justify-content: center;
@@ -17,19 +17,21 @@
             margin: 0;
         }
         .login-container {
-            background: #252525;
+            background: #1e1e1e;
             padding: 2.5rem;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
             width: 85%;
             max-width: 350px;
             text-align: center;
+            border: 1px solid #333;
         }
         h1 {
-            font-size: 1.8rem;
-            letter-spacing: 3px;
+            font-size: 2rem;
+            letter-spacing: 4px;
             margin-bottom: 2rem;
             color: #ffffff;
+            font-weight: 700;
         }
         .input-group {
             margin-bottom: 1.5rem;
@@ -37,40 +39,58 @@
         }
         label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #bbb;
+            margin-bottom: 0.6rem;
+            color: #888;
+            letter-spacing: 1px;
         }
         input {
             width: 100%;
-            padding: 12px;
-            background: #333;
+            padding: 14px;
+            background: #2a2a2a;
             border: 1px solid #444;
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
             font-family: 'Montserrat', sans-serif;
             box-sizing: border-box;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus {
+            border: 1px solid #ffffff;
         }
         button {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             background: #ffffff;
-            color: #1a1a1a;
+            color: #000000;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 700;
+            font-size: 1rem;
             cursor: pointer;
             margin-top: 1rem;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         button:active {
-            transform: scale(0.98);
+            transform: scale(0.96);
+            background: #cccccc;
+        }
+        button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
         }
         #mensaje {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: #ff5555;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #ff4d4d;
+            font-weight: 400;
+            min-height: 1.2rem;
         }
     </style>
 </head>
@@ -81,7 +101,7 @@
         <form id="formLogin">
             <div class="input-group">
                 <label>USUARIO</label>
-                <input type="text" id="user" required>
+                <input type="text" id="user" required spellcheck="false">
             </div>
             <div class="input-group">
                 <label>CONTRASEÑA</label>
@@ -93,13 +113,14 @@
     </div>
 
     <script>
-        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyyJfV_fT5GLSErLUipUisA47wtrgC2tyhAWphoBdOhDNP8GyJxObbzUlUgneYaQfPl/exec";
+        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxWsuKmDFtvIQ9Flp-YZYCrfSGoHWzLmRNH_vXaf_KA0MBjw-JapsfPyr49lNXvWHE2/exec";
 
         document.getElementById('formLogin').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnEntrar');
             const msg = document.getElementById('mensaje');
             
+            msg.innerText = "";
             btn.innerText = "VERIFICANDO...";
             btn.disabled = true;
 
@@ -109,6 +130,15 @@
                 contrasena: document.getElementById('pass').value
             };
 
+            // Usamos 'no-cors' no es posible para leer JSON, usamos el modo normal
+            // Pero con una pequeña trampa de redirección de Google
+            fetch(URL_SCRIPT, {
+                method: "POST",
+                mode: "no-cors", // Intentamos enviar, pero no-cors no permite leer respuesta
+                body: JSON.stringify(datos)
+            });
+
+            // Re-intentamos con el método estándar para obtener la respuesta real
             fetch(URL_SCRIPT, {
                 method: "POST",
                 body: JSON.stringify(datos)
@@ -116,19 +146,27 @@
             .then(res => res.json())
             .then(response => {
                 if (response.result === "success") {
-                    // Guardar datos en el navegador para la siguiente ventana
                     localStorage.setItem('session_ruta216', JSON.stringify(response));
                     localStorage.setItem('user_ruta216', datos.usuario);
-                    alert("¡Bienvenido/a, " + response.nombre_real + "!");
-                    // Aquí es donde saltaremos a la Ventana #2 en la v1.1
+                    msg.style.color = "#4dff88";
+                    msg.innerText = "¡BIENVENIDO/A, " + response.nombre_real.toUpperCase() + "!";
+                    
+                    // Pequeña pausa para que vean el saludo antes de pasar a la ventana 2
+                    setTimeout(() => {
+                        alert("Acceso concedido. Preparando ventana de estudio...");
+                        // Próximamente: window.location.href = "estudio.html";
+                    }, 1000);
                 } else {
-                    msg.innerText = "DATOS INCORRECTOS. INTENTA DE NUEVO.";
+                    msg.style.color = "#ff4d4d";
+                    msg.innerText = "DATOS INCORRECTOS. REVISA MAYÚSCULAS.";
                     btn.innerText = "ENTRAR";
                     btn.disabled = false;
                 }
             })
             .catch(error => {
-                msg.innerText = "ERROR DE CONEXIÓN.";
+                console.error(error);
+                msg.style.color = "#ff4d4d";
+                msg.innerText = "ERROR DE CONEXIÓN. REVISA TU INTERNET.";
                 btn.innerText = "ENTRAR";
                 btn.disabled = false;
             });
