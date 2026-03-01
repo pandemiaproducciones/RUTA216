@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUTA216 v1.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: #252525;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 85%;
+            max-width: 350px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.8rem;
+            letter-spacing: 3px;
+            margin-bottom: 2rem;
+            color: #ffffff;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #bbb;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #333;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #ffffff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.2s;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #mensaje {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #ff5555;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>RUTA 216</h1>
+        <form id="formLogin">
+            <div class="input-group">
+                <label>USUARIO</label>
+                <input type="text" id="user" required>
+            </div>
+            <div class="input-group">
+                <label>CONTRASEÑA</label>
+                <input type="password" id="pass" required>
+            </div>
+            <button type="submit" id="btnEntrar">ENTRAR</button>
+        </form>
+        <div id="mensaje"></div>
+    </div>
+
+    <script>
+        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyyJfV_fT5GLSErLUipUisA47wtrgC2tyhAWphoBdOhDNP8GyJxObbzUlUgneYaQfPl/exec";
+
+        document.getElementById('formLogin').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnEntrar');
+            const msg = document.getElementById('mensaje');
+            
+            btn.innerText = "VERIFICANDO...";
+            btn.disabled = true;
+
+            const datos = {
+                action: "login",
+                usuario: document.getElementById('user').value,
+                contrasena: document.getElementById('pass').value
+            };
+
+            fetch(URL_SCRIPT, {
+                method: "POST",
+                body: JSON.stringify(datos)
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.result === "success") {
+                    // Guardar datos en el navegador para la siguiente ventana
+                    localStorage.setItem('session_ruta216', JSON.stringify(response));
+                    localStorage.setItem('user_ruta216', datos.usuario);
+                    alert("¡Bienvenido/a, " + response.nombre_real + "!");
+                    // Aquí es donde saltaremos a la Ventana #2 en la v1.1
+                } else {
+                    msg.innerText = "DATOS INCORRECTOS. INTENTA DE NUEVO.";
+                    btn.innerText = "ENTRAR";
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                msg.innerText = "ERROR DE CONEXIÓN.";
+                btn.innerText = "ENTRAR";
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
