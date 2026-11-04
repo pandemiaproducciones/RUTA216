@@ -212,6 +212,9 @@
     // Registro del trombón: la tónica real del ejemplo cae entre Lab2 y Sol3
     const TONICA_MAS_GRAVE = 44;
 
+    // Afinación del ejemplo: La = 442 Hz (los sonidos originales vienen en 440)
+    const LA = 442;
+
     const TOTAL = NIVELES.length * CATEGORIAS.length * 12; // 216
 
     // =========================================================
@@ -366,6 +369,7 @@
         if (!buf) return;
         const src = c.createBufferSource();
         src.buffer = buf;
+        src.playbackRate.value = LA / 440;
         const g = c.createGain();
         const fin = cuando + duracion;
         g.gain.setValueAtTime(0.9, cuando);
