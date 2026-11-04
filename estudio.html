@@ -799,7 +799,10 @@
             .then(r => r.json())
             .then(resp => {
                 if (resp.result !== "success") throw 0;
-                rankDatos = resp.lista || [];
+                // cuentas que no compiten en el ranking (se comparan sin mayúsculas ni tildes)
+                const NO_COMPITEN = ["invitado"];
+                const simple = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+                rankDatos = (resp.lista || []).filter(x => !NO_COMPITEN.includes(simple(x.nombre)));
                 const [a, m, d] = String(resp.dia).split("-").map(Number);
                 const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
                 document.getElementById('rankSub').innerText =

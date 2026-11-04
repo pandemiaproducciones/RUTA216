@@ -113,7 +113,7 @@ function doPost(e) {
       var lista = [];
       for (var i = 1; i < rows.length; i++) {
         var usuario = String(rows[i][0] || "");
-        if (usuario === "" || limpiar(usuario) === "paisa") continue;   // el profesor no compite
+        if (usuario === "" || NO_COMPITEN.indexOf(limpiar(usuario)) >= 0) continue;   // profesor e invitado no compiten
         var n = String(rows[i][12] || "") === dia ? (Number(rows[i][13]) || 0) : 0;
         lista.push({
           nombre: String(rows[i][2] || usuario),
@@ -137,6 +137,9 @@ function doPost(e) {
 }
 
 var ZONA = "America/Bogota";
+
+// Usuarios que no aparecen en el ranking (escritos en minúscula, sin tildes ni espacios)
+var NO_COMPITEN = ["paisa", "invitado"];
 
 // Fecha de hoy en Colombia (ej. "2026-11-04")
 function hoy() {
