@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUTA216 · Estudio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+
+        /* Encabezado */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        header h1 { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
+        header .quien { font-size: 0.7rem; color: #888; letter-spacing: 1px; margin-top: 2px; }
+        .btn-chico {
+            background: none; border: 1px solid #444; color: #aaa; border-radius: 8px;
+            padding: 8px 10px; font-family: inherit; font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 1px; cursor: pointer;
+        }
+
+        /* Progreso */
+        .progreso { margin-bottom: 18px; }
+        .progreso .texto { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 6px; font-weight: 600; }
+        .barra { height: 8px; background: #2a2a2a; border-radius: 4px; overflow: hidden; }
+        .barra div { height: 100%; background: #4dff88; width: 0; transition: width 0.5s; }
+
+        /* Tarjeta principal */
+        .tarjeta {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 15px;
+            padding: 22px 18px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .etiqueta { font-size: 0.7rem; color: #888; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
+        .nivel { font-size: 1rem; font-weight: 700; margin: 6px 0 14px; color: #ffd166; }
+        .nombre-escala { font-size: 2.2rem; font-weight: 700; margin: 4px 0 2px; line-height: 1.1; }
+        .tipo { font-size: 0.85rem; color: #bbb; margin-bottom: 18px; }
+        .repaso { font-size: 0.7rem; color: #ffd166; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
+
+        .pulsos { display: flex; justify-content: center; gap: 12px; margin: 6px 0 14px; }
+        .pulsos span { width: 14px; height: 14px; border-radius: 50%; background: #333; transition: background 0.05s; }
+        .pulsos span.on { background: #fff; }
+        .pulsos span.on.fuerte { background: #ffd166; }
+
+        .notas { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; min-height: 30px; margin-bottom: 18px; }
+        .notas span {
+            min-width: 26px; padding: 5px 4px; border-radius: 6px; background: #2a2a2a;
+            font-size: 0.75rem; font-weight: 700; color: #888;
+        }
+        .notas span.arp { background: #23303a; }
+        .notas span.on { background: #fff; color: #000; }
+        .cuenta { font-size: 0.8rem; color: #ffd166; font-weight: 700; min-height: 1.1rem; margin-bottom: 8px; }
+
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 10px; font-family: inherit;
+            font-weight: 700; font-size: 1rem; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 1px; margin-top: 10px; transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; }
+        .btn-blanco { background: #fff; color: #000; }
+        .btn-verde { background: #4dff88; color: #000; }
+        .btn-gris { background: #2a2a2a; color: #fff; border: 1px solid #444; font-size: 0.8rem; padding: 12px; }
+
+        .aviso { font-size: 0.75rem; color: #888; margin-top: 12px; min-height: 1rem; }
+
+        /* Mapa de la ruta */
+        .ruta { margin-top: 28px; }
+        .ruta h2 { font-size: 0.8rem; letter-spacing: 2px; color: #888; margin: 0 0 12px; }
+        .bloque { margin-bottom: 16px; }
+        .bloque h3 { font-size: 0.8rem; margin: 0 0 8px; color: #ffd166; }
+        .fila-cat { font-size: 0.65rem; color: #888; letter-spacing: 1px; font-weight: 700; margin: 8px 0 5px; }
+        .casillas { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+        .casillas button {
+            padding: 8px 0; border-radius: 6px; border: 1px solid #333; background: #1a1a1a;
+            color: #555; font-family: inherit; font-size: 0.7rem; font-weight: 700; cursor: default;
+        }
+        .casillas button.hecha { background: #1f3a2a; color: #4dff88; border-color: #2c5a3e; cursor: pointer; }
+        .casillas button.actual { background: #fff; color: #000; border-color: #fff; cursor: pointer; }
+        .casillas button.vista { outline: 2px solid #ffd166; }
+
+        /* Ventanas emergentes */
+        .fondo {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+            align-items: center; justify-content: center; padding: 16px; z-index: 10;
+        }
+        .fondo.visible { display: flex; }
+        .ventana { background: #1e1e1e; border: 1px solid #333; border-radius: 15px; padding: 22px 18px; width: 100%; max-width: 380px; }
+        .ventana h2 { margin: 0 0 6px; font-size: 1.1rem; }
+        .ventana p { font-size: 0.8rem; color: #aaa; margin: 0 0 14px; line-height: 1.4; }
+        .opcion {
+            display: block; width: 100%; text-align: left; background: #2a2a2a; color: #fff;
+            border: 1px solid #444; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+            font-family: inherit; cursor: pointer;
+        }
+        .opcion b { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+        .opcion small { color: #999; font-size: 0.72rem; }
+        .opcion.elegida { border-color: #4dff88; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header>
+        <div>
+            <h1>RUTA 216</h1>
+            <div class="quien" id="quien"></div>
+        </div>
+        <div>
+            <button class="btn-chico" id="btnInstrumento">INSTRUMENTO</button>
+            <button class="btn-chico" id="btnSalir">SALIR</button>
+        </div>
+    </header>
+
+    <div class="progreso">
+        <div class="texto"><span id="txtProgreso">0 de 216</span><span id="txtPorcentaje">0%</span></div>
+        <div class="barra"><div id="barra"></div></div>
+    </div>
+
+    <div class="tarjeta">
+        <div class="repaso" id="repaso"></div>
+        <div class="etiqueta" id="etiquetaCat">Escalas mayores</div>
+        <div class="nivel" id="nivel">Negras a 80</div>
+        <div class="nombre-escala" id="nombreEscala">Do mayor</div>
+        <div class="tipo" id="tipo">1 octava · subir, bajar y arpegio</div>
+
+        <div class="cuenta" id="cuenta"></div>
+        <div class="pulsos" id="pulsos"><span></span><span></span><span></span><span></span></div>
+        <div class="notas" id="notas"></div>
+
+        <button class="btn btn-blanco" id="btnEjemplo" disabled>CARGANDO SONIDO…</button>
+        <button class="btn btn-gris" id="btnMetronomo" disabled>SOLO METRÓNOMO</button>
+        <button class="btn btn-verde" id="btnHecha">✓ YA LA TOQUÉ</button>
+        <div class="aviso" id="aviso"></div>
+    </div>
+
+    <div class="ruta">
+        <h2>MI RUTA</h2>
+        <div id="mapa"></div>
+    </div>
+</div>
+
+<!-- Elegir instrumento -->
+<div class="fondo" id="ventanaInstrumento">
+    <div class="ventana">
+        <h2>¿Qué instrumento tocas?</h2>
+        <p>Así el ejemplo suena en la tonalidad correcta para ti. El nombre de la escala es el que lees en tu partitura.</p>
+        <div id="opcionesInstrumento"></div>
+    </div>
+</div>
+
+<!-- Felicitación -->
+<div class="fondo" id="ventanaLogro">
+    <div class="ventana" style="text-align:center">
+        <h2 id="logroTitulo">¡Bien hecho!</h2>
+        <p id="logroTexto"></p>
+        <button class="btn btn-blanco" id="btnCerrarLogro">SIGUIENTE</button>
+    </div>
+</div>
+
+<script>
+    // =========================================================
+    //  CONFIGURACIÓN (aquí se cambia lo musical)
+    // =========================================================
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxWsuKmDFtvIQ9Flp-YZYCrfSGoHWzLmRNH_vXaf_KA0MBjw-JapsfPyr49lNXvWHE2/exec";
+
+    // Los 6 niveles, en orden. figura: 1 = negras, 2 = corcheas
+    const NIVELES = [
+        { nombre: "Negras a 80",   bpm: 80,  figura: 1 },
+        { nombre: "Negras a 100",  bpm: 100, figura: 1 },
+        { nombre: "Negras a 120",  bpm: 120, figura: 1 },
+        { nombre: "Corcheas a 80",  bpm: 80,  figura: 2 },
+        { nombre: "Corcheas a 100", bpm: 100, figura: 2 },
+        { nombre: "Corcheas a 120", bpm: 120, figura: 2 }
+    ];
+
+    // Nombres de notas (escritas). El número es la nota: Do=0, Do#=1 ... Si=11
+    const NOMBRE_NOTA = {0:"Do",1:"Do#",2:"Re",3:"Mib",4:"Mi",5:"Fa",6:"Fa#",7:"Sol",8:"Lab",9:"La",10:"Sib",11:"Si"};
+    const NOMBRE_NOTA_BEMOL = {1:"Reb",6:"Solb",8:"Lab",3:"Mib",10:"Sib"};
+    const NOMBRE_NOTA_SOST  = {1:"Do#",6:"Fa#",8:"Sol#",3:"Re#",10:"La#"};
+
+    // Las 3 familias, cada una con sus 12 tonalidades en el orden en que se estudian
+    const CATEGORIAS = [
+        { nombre: "Escalas mayores", corto: "mayor",
+          grados: [0,2,4,5,7,9,11,12], arpegio: [2,4,7],
+          orden: [[0,"Do"],[7,"Sol"],[2,"Re"],[9,"La"],[4,"Mi"],[11,"Si"],[6,"Fa#"],[1,"Reb"],[8,"Lab"],[3,"Mib"],[10,"Sib"],[5,"Fa"]] },
+        { nombre: "Escalas menores eólicas", corto: "menor",
+          grados: [0,2,3,5,7,8,10,12], arpegio: [2,4,7],
+          orden: [[9,"La"],[4,"Mi"],[11,"Si"],[6,"Fa#"],[1,"Do#"],[8,"Sol#"],[3,"Mib"],[10,"Sib"],[5,"Fa"],[0,"Do"],[7,"Sol"],[2,"Re"]] },
+        { nombre: "Escalas menores armónicas", corto: "menor armónica",
+          grados: [0,2,3,5,7,8,11,12], arpegio: [2,4,6,7],
+          orden: [[9,"La"],[4,"Mi"],[11,"Si"],[6,"Fa#"],[1,"Do#"],[8,"Sol#"],[3,"Mib"],[10,"Sib"],[5,"Fa"],[0,"Do"],[7,"Sol"],[2,"Re"]] }
+    ];
+    // arpegio = posiciones dentro de la escala (0=1er grado ... 7=octava).
+    // Mayor/menor: 1-3-5-8-5-3-1.  Armónica: 1-3-5-7(alterado)-8-7-5-3-1.
+
+    // Afinaciones. "baja" = cuántos semitonos suena más abajo de lo escrito
+    const INSTRUMENTOS = [
+        { id: "C",  nombre: "Instrumento en Do",  ejemplos: "Flauta, oboe, fagot, trombón, bombardino (clave de fa), tuba, percusión", baja: 0 },
+        { id: "Bb", nombre: "Instrumento en Si♭", ejemplos: "Clarinete, trompeta, saxo tenor, saxo soprano, clarinete bajo, bombardino (clave de sol)", baja: 2 },
+        { id: "Eb", nombre: "Instrumento en Mi♭", ejemplos: "Saxo alto, saxo barítono, clarinete requinto", baja: 9 },
+        { id: "F",  nombre: "Instrumento en Fa",  ejemplos: "Corno francés", baja: 7 }
+    ];
+
+    // Registro del trombón: la tónica real del ejemplo cae entre Lab2 y Sol3
+    const TONICA_MAS_GRAVE = 44;
+
+    const TOTAL = NIVELES.length * CATEGORIAS.length * 12; // 216
+
+    // =========================================================
+    //  SESIÓN
+    // =========================================================
+    let sesion = null;
+    try { sesion = JSON.parse(localStorage.getItem('session_ruta216')); } catch (e) {}
+    const usuario = localStorage.getItem('user_ruta216');
+    if (!sesion || !usuario) { window.location.href = "index.html"; }
+
+    const nombreReal = (sesion && sesion.nombre_real) ? sesion.nombre_real : usuario;
+    document.getElementById('quien').innerText = (nombreReal || "").toUpperCase();
+
+    const CLAVE_PROGRESO = 'ruta216_progreso_' + usuario;
+    const CLAVE_INSTR = 'ruta216_instrumento_' + usuario;
+
+    let progreso = parseInt(localStorage.getItem(CLAVE_PROGRESO) || "0", 10) || 0; // cuántas escalas lleva
+    let instrumento = localStorage.getItem(CLAVE_INSTR) || "";
+    let vista = Math.min(progreso, TOTAL - 1); // la escala que se está mostrando
+
+    document.getElementById('btnSalir').onclick = () => {
+        detener();
+        localStorage.removeItem('session_ruta216');
+        window.location.href = "index.html";
+    };
+
+    // =========================================================
+    //  DATOS DE CADA ESCALA
+    // =========================================================
+    function datosEscala(i) {
+        const nivel = NIVELES[Math.floor(i / 36)];
+        const cat = CATEGORIAS[Math.floor((i % 36) / 12)];
+        const [notaEscrita, nombre] = cat.orden[i % 12];
+        return { i, nivel, cat, notaEscrita, nombre };
+    }
+
+    // Lista de grados que se tocan: sube, baja y arpegio (empezando desde la tónica de abajo)
+    function secuenciaGrados(cat) {
+        const sube = [0,1,2,3,4,5,6,7];
+        const baja = [6,5,4,3,2,1,0];
+        const arp = cat.arpegio;                       // ej. [2,4,7]
+        const arpVuelta = arp.slice(0, -1).reverse();  // ej. [4,2]
+        return { escala: sube.concat(baja), arpegio: arp.concat(arpVuelta, [0]) };
+    }
+
+    function etiquetaGrado(pos, cat) {
+        if (pos === 7) return "8";
+        if (cat.corto === "menor armónica" && pos === 6) return "7↑";
+        return String(pos + 1);
+    }
+
+    // =========================================================
+    //  SONIDO
+    // =========================================================
+    let ctx = null;
+    const muestras = {};    // nota MIDI -> sonido listo
+    let datosSonido = null;
+    let reproduccion = null; // lo que está sonando ahora
+
+    function obtenerCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+    }
+
+    function base64ABuffer(dataUrl) {
+        const b64 = dataUrl.split(",")[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+        return bytes.buffer;
+    }
+
+    function decodificar(c, arrayBuffer) {
+        return new Promise((ok, mal) => c.decodeAudioData(arrayBuffer, ok, mal));
+    }
+
+    async function prepararMuestras() {
+        const c = obtenerCtx();
+        const notas = Object.keys(datosSonido);
+        for (const n of notas) {
+            if (!muestras[n]) muestras[n] = await decodificar(c, base64ABuffer(datosSonido[n]));
+        }
+    }
+
+    // Descarga el sonido de trombón al abrir la página
+    fetch("sonidos/trombon.json")
+        .then(r => r.json())
+        .then(d => {
+            datosSonido = d;
+            document.getElementById('btnEjemplo').disabled = false;
+            document.getElementById('btnMetronomo').disabled = false;
+            document.getElementById('btnEjemplo').innerText = "▶ ESCUCHAR EJEMPLO";
+        })
+        .catch(() => {
+            document.getElementById('btnEjemplo').innerText = "SIN SONIDO";
+            document.getElementById('aviso').innerText = "No se pudo cargar el sonido. Revisa tu internet y recarga la página.";
+            document.getElementById('btnMetronomo').disabled = false;
+        });
+
+    function clic(c, destino, cuando, fuerte) {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = "square";
+        osc.frequency.value = fuerte ? 1600 : 1000;
+        g.gain.setValueAtTime(0.0001, cuando);
+        g.gain.exponentialRampToValueAtTime(fuerte ? 0.35 : 0.22, cuando + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.06);
+        osc.connect(g); g.connect(destino);
+        osc.start(cuando); osc.stop(cuando + 0.08);
+    }
+
+    function nota(c, destino, midi, cuando, duracion) {
+        const buf = muestras[midi];
+        if (!buf) return;
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const g = c.createGain();
+        const fin = cuando + duracion;
+        g.gain.setValueAtTime(0.9, cuando);
+        g.gain.setValueAtTime(0.9, Math.max(cuando, fin - 0.06));
+        g.gain.linearRampToValueAtTime(0.0001, fin);
+        src.connect(g); g.connect(destino);
+        src.start(cuando);
+        src.stop(fin + 0.05);
+    }
+
+    function tonicaReal(notaEscrita) {
+        const instr = INSTRUMENTOS.find(x => x.id === instrumento) || INSTRUMENTOS[0];
+        const clase = ((notaEscrita - instr.baja) % 12 + 12) % 12;
+        let t = TONICA_MAS_GRAVE;
+        while (t % 12 !== clase) t++;
+        return t;
+    }
+
+    // conEscala = false -> solo metrónomo (8 compases)
+    async function tocar(conEscala) {
+        detener();
+        const c = obtenerCtx();
+        if (conEscala) {
+            document.getElementById('btnEjemplo').innerText = "PREPARANDO…";
+            try { await prepararMuestras(); } catch (e) {}
+        }
+        const d = datosEscala(vista);
+        const pulso = 60 / d.nivel.bpm;
+        const paso = pulso / d.nivel.figura;     // duración de cada nota
+        const salida = c.createGain();
+        salida.connect(c.destination);
+        const inicio = c.currentTime + 0.15;
+        const entrada = 4 * pulso;               // 1 compás de entrada
+
+        let totalPulsos;
+        const eventosNota = []; // [tiempo, índice de casilla]
+
+        if (conEscala) {
+            const sec = secuenciaGrados(d.cat);
+            // el arpegio arranca desde la tónica de abajo (no se repite): 3-5-8-5-3-1
+            const lista = sec.escala.concat(sec.arpegio);
+            const tonica = tonicaReal(d.notaEscrita);
+            const notasPorCompas = 4 * d.nivel.figura;
+            const totalNotas = lista.length;
+            const compases = Math.ceil(totalNotas / notasPorCompas);
+            totalPulsos = 4 + compases * 4;
+            lista.forEach((pos, k) => {
+                const t = inicio + entrada + k * paso;
+                const esUltima = k === totalNotas - 1;
+                const finCompas = inicio + entrada + compases * 4 * pulso;
+                const dur = esUltima ? (finCompas - t) * 0.95 : paso * 0.92;
+                nota(c, salida, tonica + d.cat.grados[pos], t, dur);
+                eventosNota.push([t, k]);
+            });
+        } else {
+            totalPulsos = 4 + 32;
+        }
+
+        for (let p = 0; p < totalPulsos; p++) {
+            clic(c, salida, inicio + p * pulso, p % 4 === 0);
+        }
+
+        reproduccion = {
+            salida, inicio, pulso, totalPulsos, eventosNota, conEscala,
+            fin: inicio + totalPulsos * pulso
+        };
+        document.getElementById('btnEjemplo').innerText = conEscala ? "■ DETENER" : "▶ ESCUCHAR EJEMPLO";
+        document.getElementById('btnMetronomo').innerText = conEscala ? "SOLO METRÓNOMO" : "■ DETENER METRÓNOMO";
+        requestAnimationFrame(animar);
+    }
+
+    function detener() {
+        if (reproduccion) {
+            try {
+                reproduccion.salida.gain.setValueAtTime(reproduccion.salida.gain.value, ctx.currentTime);
+                reproduccion.salida.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.03);
+                const s = reproduccion.salida;
+                setTimeout(() => s.disconnect(), 100);
+            } catch (e) {}
+        }
+        reproduccion = null;
+        document.querySelectorAll('#pulsos span').forEach(s => s.className = "");
+        document.querySelectorAll('#notas span').forEach(s => s.classList.remove('on'));
+        document.getElementById('cuenta').innerText = "";
+        const be = document.getElementById('btnEjemplo');
+        if (datosSonido) be.innerText = "▶ ESCUCHAR EJEMPLO";
+        document.getElementById('btnMetronomo').innerText = "SOLO METRÓNOMO";
+    }
+
+    function animar() {
+        const r = reproduccion;
+        if (!r) return;
+        const ahora = ctx.currentTime;
+        if (ahora >= r.fin) { detener(); return; }
+
+        const p = Math.floor((ahora - r.inicio) / r.pulso);
+        const dentro = (ahora - r.inicio) / r.pulso - p;
+        document.querySelectorAll('#pulsos span').forEach((s, k) => {
+            const on = p >= 0 && k === p % 4 && dentro < 0.35;
+            s.className = on ? ("on" + (k === 0 ? " fuerte" : "")) : "";
+        });
+        document.getElementById('cuenta').innerText = (p >= 0 && p < 4) ? ("Entrada: " + (p + 1)) : "";
+
+        if (r.conEscala) {
+            let actual = -1;
+            for (const [t, k] of r.eventosNota) { if (ahora >= t) actual = k; }
+            document.querySelectorAll('#notas span').forEach((s, k) => s.classList.toggle('on', k === actual));
+        }
+        requestAnimationFrame(animar);
+    }
+
+    document.getElementById('btnEjemplo').onclick = () => {
+        if (reproduccion && reproduccion.conEscala) { detener(); return; }
+        if (!instrumento) { abrirInstrumentos(); return; }
+        tocar(true);
+    };
+    document.getElementById('btnMetronomo').onclick = () => {
+        if (reproduccion && !reproduccion.conEscala) { detener(); return; }
+        tocar(false);
+    };
+
+    // =========================================================
+    //  PANTALLA
+    // =========================================================
+    function mostrar() {
+        const d = datosEscala(vista);
+        document.getElementById('etiquetaCat').innerText = d.cat.nombre;
+        document.getElementById('nivel').innerText = d.nivel.nombre;
+        document.getElementById('nombreEscala').innerText = d.nombre + " " + d.cat.corto;
+        document.getElementById('repaso').innerText = vista < progreso ? "REPASO · YA LA HICISTE" : "";
+
+        const sec = secuenciaGrados(d.cat);
+        const cont = document.getElementById('notas');
+        cont.innerHTML = "";
+        sec.escala.forEach(pos => {
+            const s = document.createElement('span'); s.innerText = etiquetaGrado(pos, d.cat); cont.appendChild(s);
+        });
+        sec.arpegio.forEach(pos => {
+            const s = document.createElement('span'); s.className = "arp"; s.innerText = etiquetaGrado(pos, d.cat); cont.appendChild(s);
+        });
+
+        const listo = progreso >= TOTAL;
+        const btnH = document.getElementById('btnHecha');
+        btnH.style.display = (vista === progreso && !listo) ? "block" : "none";
+
+        const n = Math.min(progreso, TOTAL);
+        document.getElementById('txtProgreso').innerText = n + " de " + TOTAL + " escalas";
+        document.getElementById('txtPorcentaje').innerText = Math.floor(n * 100 / TOTAL) + "%";
+        document.getElementById('barra').style.width = (n * 100 / TOTAL) + "%";
+
+        dibujarMapa();
+    }
+
+    function dibujarMapa() {
+        const mapa = document.getElementById('mapa');
+        mapa.innerHTML = "";
+        NIVELES.forEach((nv, a) => {
+            const bloque = document.createElement('div'); bloque.className = "bloque";
+            const h = document.createElement('h3'); h.innerText = (a + 1) + ". " + nv.nombre; bloque.appendChild(h);
+            CATEGORIAS.forEach((cat, b) => {
+                const f = document.createElement('div'); f.className = "fila-cat"; f.innerText = cat.nombre.toUpperCase(); bloque.appendChild(f);
+                const g = document.createElement('div'); g.className = "casillas";
+                cat.orden.forEach((o, k) => {
+                    const i = a * 36 + b * 12 + k;
+                    const bt = document.createElement('button');
+                    bt.innerText = o[1];
+                    if (i < progreso) bt.classList.add('hecha');
+                    else if (i === progreso) bt.classList.add('actual');
+                    if (i === vista) bt.classList.add('vista');
+                    if (i <= progreso && i < TOTAL) {
+                        bt.onclick = () => { detener(); vista = i; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+                    }
+                    g.appendChild(bt);
+                });
+                bloque.appendChild(g);
+            });
+            mapa.appendChild(bloque);
+        });
+    }
+
+    document.getElementById('btnHecha').onclick = () => {
+        detener();
+        const d = datosEscala(vista);
+        progreso = vista + 1;
+        localStorage.setItem(CLAVE_PROGRESO, progreso);
+        guardarEnHoja();
+
+        let titulo = "¡Bien hecho!";
+        let texto = d.nombre + " " + d.cat.corto + " (" + d.nivel.nombre + ") lista.";
+        if (progreso >= TOTAL) {
+            titulo = "¡RUTA 216 COMPLETA!";
+            texto = "Terminaste las 216 escalas. ¡Felicitaciones!";
+        } else if (progreso % 36 === 0) {
+            titulo = "¡Nivel completo!";
+            texto = "Terminaste todo en " + d.nivel.nombre + ". Ahora sigue " + NIVELES[progreso / 36].nombre + ".";
+        } else if (progreso % 12 === 0) {
+            titulo = "¡Familia completa!";
+            texto = "Terminaste las " + d.cat.nombre.toLowerCase() + " en " + d.nivel.nombre + ".";
+        }
+        vista = Math.min(progreso, TOTAL - 1);
+        document.getElementById('logroTitulo').innerText = titulo;
+        document.getElementById('logroTexto').innerText = texto;
+        document.getElementById('ventanaLogro').classList.add('visible');
+        mostrar();
+    };
+    document.getElementById('btnCerrarLogro').onclick = () => {
+        document.getElementById('ventanaLogro').classList.remove('visible');
+    };
+
+    // =========================================================
+    //  INSTRUMENTO
+    // =========================================================
+    function abrirInstrumentos() {
+        const cont = document.getElementById('opcionesInstrumento');
+        cont.innerHTML = "";
+        INSTRUMENTOS.forEach(x => {
+            const b = document.createElement('button');
+            b.className = "opcion" + (x.id === instrumento ? " elegida" : "");
+            b.innerHTML = "<b>" + x.nombre + "</b><small>" + x.ejemplos + "</small>";
+            b.onclick = () => {
+                instrumento = x.id;
+                localStorage.setItem(CLAVE_INSTR, instrumento);
+                guardarEnHoja();
+                document.getElementById('ventanaInstrumento').classList.remove('visible');
+                mostrar();
+            };
+            cont.appendChild(b);
+        });
+        document.getElementById('ventanaInstrumento').classList.add('visible');
+    }
+    document.getElementById('btnInstrumento').onclick = () => { detener(); abrirInstrumentos(); };
+
+    // =========================================================
+    //  GUARDAR EN GOOGLE SHEETS
+    //  (necesita las funciones "progreso" y "guardarProgreso" en Apps Script;
+    //   mientras no existan, el avance queda guardado en el celular)
+    // =========================================================
+    function guardarEnHoja() {
+        fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "guardarProgreso", usuario, progreso, instrumento })
+        }).catch(() => {});
+    }
+
+    function cargarDeHoja() {
+        fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "progreso", usuario })
+        })
+        .then(r => r.json())
+        .then(resp => {
+            if (resp.result !== "success") return;
+            const remoto = parseInt(resp.progreso, 10) || 0;
+            let cambio = false;
+            if (remoto > progreso) {
+                progreso = remoto; vista = Math.min(progreso, TOTAL - 1);
+                localStorage.setItem(CLAVE_PROGRESO, progreso); cambio = true;
+            } else if (remoto < progreso) {
+                guardarEnHoja();
+            }
+            if (resp.instrumento && !instrumento) {
+                instrumento = resp.instrumento; localStorage.setItem(CLAVE_INSTR, instrumento); cambio = true;
+            }
+            if (cambio) mostrar();
+        })
+        .catch(() => {});
+    }
+
+    // =========================================================
+    //  INICIO
+    // =========================================================
+    mostrar();
+    cargarDeHoja();
+    if (!instrumento) abrirInstrumentos();
+</script>
+</body>
+</html>
