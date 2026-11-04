@@ -1,11 +1,11 @@
-// RUTA216 v2.1 - SCRIPT DE CONEXIÓN COMPLETO
+// RUTA216 v3.0 - SCRIPT DE CONEXIÓN COMPLETO
 // Hoja "usuarios":
-//   A usuario | B contraseña | C nombre_real | D instrumento (C, Bb, Eb o F)
-//   E nivel actual | F escala actual | G escalas hechas (0 a 216)
+//   A usuario | B contraseña | C nombre | D instrumento (C, Bb, Eb o F)
+//   E nivel | F escala | G escalas_hechas (0 a 216) | H detalle (lo llena la app)
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.tryLock(10000); // Espera 10 segundos si el script está ocupado
+  lock.tryLock(10000);
 
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usuarios");
@@ -16,47 +16,53 @@ function doPost(e) {
     // ACCIÓN: LOGIN
     if (action === "login") {
       for (var i = 1; i < rows.length; i++) {
-        // Validación exacta de mayúsculas y minúsculas
         if (rows[i][0].toString() === data.usuario && rows[i][1].toString() === data.contrasena) {
           return res({
             result: "success",
             nombre_real: rows[i][2],
             instrumento: afinacion(rows[i][3]),
-            progreso: Number(rows[i][6]) || 0
+            progreso: Number(rows[i][6]) || 0,
+            hechas: String(rows[i][7] || "")
           });
         }
       }
       return res({result: "error", message: "Usuario o contraseña incorrectos"});
     }
 
-    // ACCIÓN: LEER EL AVANCE DE UN ESTUDIANTE
+    // ACCIÓN: LEER EL AVANCE
     if (action === "progreso") {
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0].toString() === data.usuario) {
           return res({
             result: "success",
             instrumento: afinacion(rows[i][3]),
-            progreso: Number(rows[i][6]) || 0
+            progreso: Number(rows[i][6]) || 0,
+            hechas: String(rows[i][7] || "")
           });
         }
       }
       return res({result: "error", message: "Usuario no encontrado"});
     }
 
-    // ACCIÓN: GUARDAR EL AVANCE (lo manda la ventana de estudio)
+    // ACCIÓN: GUARDAR EL AVANCE (nunca borra escalas ya hechas)
     if (action === "guardarProgreso") {
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0].toString() === data.usuario) {
-          var actual = Number(rows[i][6]) || 0;
-          var nuevo = Number(data.progreso) || 0;
-          if (data.instrumento) sheet.getRange(i + 1, 4).setValue(data.instrumento);
-          // nunca se retrocede: si la hoja tiene más avance, se deja el de la hoja
-          if (nuevo >= actual) {
-            sheet.getRange(i + 1, 5).setValue(data.nivel || "");
-            sheet.getRange(i + 1, 6).setValue(data.escala || "");
-            sheet.getRange(i + 1, 7).setValue(nuevo);
+          var enHoja = aLista(rows[i][7], rows[i][6]);
+          var nuevas = aLista(data.hechas, data.progreso);
+          var total = 0;
+          for (var k = 0; k < 216; k++) {
+            if (nuevas[k]) enHoja[k] = true;
+            if (enHoja[k]) total++;
           }
-          return res({result: "success", progreso: Math.max(nuevo, actual)});
+          if (data.instrumento) sheet.getRange(i + 1, 4).setValue(data.instrumento);
+          sheet.getRange(i + 1, 5, 1, 4).setValues([[
+            data.nivel || "",
+            data.escala || "",
+            total,
+            "'" + aTexto(enHoja)
+          ]]);
+          return res({result: "success", progreso: total, hechas: aTexto(enHoja)});
         }
       }
       return res({result: "error", message: "Usuario no encontrado"});
@@ -71,7 +77,22 @@ function doPost(e) {
   }
 }
 
-// Función auxiliar para enviar respuestas correctamente
+// Texto de 216 "0" y "1" -> lista. Si no hay texto, usa el número (formato viejo).
+function aLista(texto, numero) {
+  var l = [];
+  var t = String(texto || "");
+  var esTexto = /^[01]+$/.test(t);
+  var n = Math.min(Number(numero) || 0, 216);
+  for (var k = 0; k < 216; k++) l.push(esTexto ? t.charAt(k) === "1" : k < n);
+  return l;
+}
+
+function aTexto(l) {
+  var t = "";
+  for (var k = 0; k < 216; k++) t += l[k] ? "1" : "0";
+  return t;
+}
+
 function res(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -86,7 +107,6 @@ function afinacion(valor) {
   return "";
 }
 
-// Para comprobar que el script está activo (abrir la URL en el navegador)
 function doGet(e) {
   return ContentService.createTextOutput("RUTA216 activo").setMimeType(ContentService.MimeType.TEXT);
 }

@@ -18,6 +18,8 @@
 
         /* Encabezado */
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .marca { display: flex; align-items: center; gap: 10px; }
+        .marca img { width: 44px; height: auto; display: block; }
         header h1 { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
         header .quien { font-size: 0.7rem; color: #888; letter-spacing: 1px; margin-top: 2px; }
         .btn-chico {
@@ -108,9 +110,12 @@
 <div class="app">
 
     <header>
-        <div>
-            <h1>RUTA 216</h1>
-            <div class="quien" id="quien"></div>
+        <div class="marca">
+            <img src="logo.png" alt="PAISA">
+            <div>
+                <h1>RUTA 216</h1>
+                <div class="quien" id="quien"></div>
+            </div>
         </div>
         <div>
             <button class="btn-chico" id="btnInstrumento">INSTRUMENTO</button>
@@ -220,20 +225,49 @@
     const nombreReal = (sesion && sesion.nombre_real) ? sesion.nombre_real : usuario;
     document.getElementById('quien').innerText = (nombreReal || "").toUpperCase();
 
-    const CLAVE_PROGRESO = 'ruta216_progreso_' + usuario;
+    const CLAVE_HECHAS = 'ruta216_hechas_' + usuario;      // 216 caracteres: "1" hecha, "0" pendiente
+    const CLAVE_PROGRESO = 'ruta216_progreso_' + usuario;  // formato viejo (solo un número)
     const CLAVE_INSTR = 'ruta216_instrumento_' + usuario;
 
-    let progreso = parseInt(localStorage.getItem(CLAVE_PROGRESO) || "0", 10) || 0; // cuántas escalas lleva
+    // Convierte un número viejo (N escalas seguidas) o un texto de 0 y 1 en la lista de hechas
+    function aLista(texto, numero) {
+        const l = new Array(TOTAL).fill(false);
+        const t = String(texto || "");
+        if (/^[01]+$/.test(t)) { for (let k = 0; k < TOTAL && k < t.length; k++) l[k] = t[k] === "1"; }
+        else { const n = Math.min(parseInt(numero, 10) || 0, TOTAL); for (let k = 0; k < n; k++) l[k] = true; }
+        return l;
+    }
+    const aTexto = l => l.map(x => x ? "1" : "0").join("");
+    const cuantas = l => l.filter(Boolean).length;
+    function unir(otra) { let cambio = false; otra.forEach((x, k) => { if (x && !hechas[k]) { hechas[k] = true; cambio = true; } }); return cambio; }
+
+    let hechas = aLista(localStorage.getItem(CLAVE_HECHAS), localStorage.getItem(CLAVE_PROGRESO));
     let instrumento = localStorage.getItem(CLAVE_INSTR) || "";
-    // lo que trajo el login desde la hoja (columna G = escalas hechas, D = instrumento)
+    // lo que trajo el login desde la hoja
     if (sesion) {
-        const deHoja = parseInt(sesion.ejercicio_actual, 10) || 0;
-        if (deHoja > progreso) { progreso = Math.min(deHoja, TOTAL); localStorage.setItem(CLAVE_PROGRESO, progreso); }
-        if (!instrumento && ["C","Bb","Eb","F"].includes(String(sesion.tonalidad))) {
-            instrumento = String(sesion.tonalidad); localStorage.setItem(CLAVE_INSTR, instrumento);
+        unir(aLista(sesion.hechas, sesion.progreso));
+        if (!instrumento && ["C","Bb","Eb","F"].includes(String(sesion.instrumento))) {
+            instrumento = String(sesion.instrumento); localStorage.setItem(CLAVE_INSTR, instrumento);
         }
     }
-    let vista = Math.min(progreso, TOTAL - 1); // la escala que se está mostrando
+    localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+
+    // ---- Reglas de desbloqueo ----
+    // En cada velocidad: las 12 mayores van en orden; al terminarlas se abren las 24 menores
+    // (eólicas y armónicas) en cualquier orden. Al completar las 36 se abre la siguiente velocidad.
+    function nivelCompleto(a) { for (let k = a * 36; k < a * 36 + 36; k++) if (!hechas[k]) return false; return true; }
+    function mayoresCompletas(a) { for (let k = a * 36; k < a * 36 + 12; k++) if (!hechas[k]) return false; return true; }
+    function disponible(i) {
+        const a = Math.floor(i / 36), j = i % 36;
+        if (a > 0 && !nivelCompleto(a - 1)) return false;
+        if (j < 12) { for (let k = a * 36; k < i; k++) if (!hechas[k]) return false; return true; }
+        return mayoresCompletas(a);
+    }
+    function siguiente() {
+        for (let i = 0; i < TOTAL; i++) if (!hechas[i] && disponible(i)) return i;
+        return TOTAL - 1;
+    }
+    let vista = siguiente(); // la escala que se está mostrando
 
     document.getElementById('btnSalir').onclick = () => {
         detener();
@@ -461,7 +495,7 @@
         document.getElementById('etiquetaCat').innerText = d.cat.nombre;
         document.getElementById('nivel').innerText = d.nivel.nombre;
         document.getElementById('nombreEscala').innerText = d.nombre + " " + d.cat.corto;
-        document.getElementById('repaso').innerText = vista < progreso ? "REPASO · YA LA HICISTE" : "";
+        document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LA HICISTE" : "";
 
         const sec = secuenciaGrados(d.cat);
         const cont = document.getElementById('notas');
@@ -473,11 +507,10 @@
             const s = document.createElement('span'); s.className = "arp"; s.innerText = etiquetaGrado(pos, d.cat); cont.appendChild(s);
         });
 
-        const listo = progreso >= TOTAL;
         const btnH = document.getElementById('btnHecha');
-        btnH.style.display = (vista === progreso && !listo) ? "block" : "none";
+        btnH.style.display = (!hechas[vista] && disponible(vista)) ? "block" : "none";
 
-        const n = Math.min(progreso, TOTAL);
+        const n = cuantas(hechas);
         document.getElementById('txtProgreso').innerText = n + " de " + TOTAL + " escalas";
         document.getElementById('txtPorcentaje').innerText = Math.floor(n * 100 / TOTAL) + "%";
         document.getElementById('barra').style.width = (n * 100 / TOTAL) + "%";
@@ -498,10 +531,11 @@
                     const i = a * 36 + b * 12 + k;
                     const bt = document.createElement('button');
                     bt.innerText = o[1];
-                    if (i < progreso) bt.classList.add('hecha');
-                    else if (i === progreso) bt.classList.add('actual');
+                    const abierta = disponible(i);
+                    if (hechas[i]) bt.classList.add('hecha');
+                    else if (abierta) bt.classList.add('actual');
                     if (i === vista) bt.classList.add('vista');
-                    if (i <= progreso && i < TOTAL) {
+                    if (hechas[i] || abierta) {
                         bt.onclick = () => { detener(); vista = i; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); };
                     }
                     g.appendChild(bt);
@@ -515,23 +549,25 @@
     document.getElementById('btnHecha').onclick = () => {
         detener();
         const d = datosEscala(vista);
-        progreso = vista + 1;
-        localStorage.setItem(CLAVE_PROGRESO, progreso);
+        const a = Math.floor(vista / 36);
+        const mayoresAntes = mayoresCompletas(a);
+        hechas[vista] = true;
+        localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
         guardarEnHoja();
 
         let titulo = "¡Bien hecho!";
         let texto = d.nombre + " " + d.cat.corto + " (" + d.nivel.nombre + ") lista.";
-        if (progreso >= TOTAL) {
+        if (cuantas(hechas) >= TOTAL) {
             titulo = "¡RUTA 216 COMPLETA!";
             texto = "Terminaste las 216 escalas. ¡Felicitaciones!";
-        } else if (progreso % 36 === 0) {
-            titulo = "¡Nivel completo!";
-            texto = "Terminaste todo en " + d.nivel.nombre + ". Ahora sigue " + NIVELES[progreso / 36].nombre + ".";
-        } else if (progreso % 12 === 0) {
-            titulo = "¡Familia completa!";
-            texto = "Terminaste las " + d.cat.nombre.toLowerCase() + " en " + d.nivel.nombre + ".";
+        } else if (nivelCompleto(a)) {
+            titulo = "¡Velocidad completa!";
+            texto = "Terminaste las 36 escalas en " + d.nivel.nombre + "." + (a < NIVELES.length - 1 ? " Se abrieron las mayores en " + NIVELES[a + 1].nombre + "." : "");
+        } else if (!mayoresAntes && mayoresCompletas(a)) {
+            titulo = "¡Mayores completas!";
+            texto = "Se abrieron las 24 menores (eólicas y armónicas) en " + d.nivel.nombre + ". Hazlas en el orden que quieras.";
         }
-        vista = Math.min(progreso, TOTAL - 1);
+        vista = siguiente();
         document.getElementById('logroTitulo').innerText = titulo;
         document.getElementById('logroTexto').innerText = texto;
         document.getElementById('ventanaLogro').classList.add('visible');
@@ -569,17 +605,23 @@
     //  (necesita las funciones "progreso" y "guardarProgreso" en Apps Script;
     //   mientras no existan, el avance queda guardado en el celular)
     // =========================================================
-    function guardarEnHoja() {
-        // texto legible para la hoja: en qué nivel y escala va
-        let nivel = "TERMINÓ", escala = "RUTA COMPLETA";
-        if (progreso < TOTAL) {
-            const d = datosEscala(progreso);
-            nivel = d.nivel.nombre;
-            escala = d.nombre + " " + d.cat.corto;
+    // Texto que ve el profesor en la hoja: velocidad actual y cuántas lleva de ella
+    function resumen() {
+        if (cuantas(hechas) >= TOTAL) return { nivel: "TERMINÓ", escala: "Ruta completa" };
+        let a = 0; while (a < NIVELES.length - 1 && nivelCompleto(a)) a++;
+        if (!mayoresCompletas(a)) {
+            const d = datosEscala(siguiente());
+            return { nivel: NIVELES[a].nombre, escala: d.nombre + " mayor" };
         }
+        let n = 0; for (let k = a * 36 + 12; k < a * 36 + 36; k++) if (hechas[k]) n++;
+        return { nivel: NIVELES[a].nombre, escala: "Menores " + n + " de 24" };
+    }
+
+    function guardarEnHoja() {
+        const r = resumen();
         fetch(URL_SCRIPT, {
             method: "POST",
-            body: JSON.stringify({ action: "guardarProgreso", usuario, progreso, instrumento, nivel, escala })
+            body: JSON.stringify({ action: "guardarProgreso", usuario, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
         }).catch(() => {});
     }
 
@@ -591,18 +633,17 @@
         .then(r => r.json())
         .then(resp => {
             if (resp.result !== "success") return;
-            const remoto = parseInt(resp.progreso, 10) || 0;
-            let cambio = false;
-            if (remoto > progreso) {
-                progreso = remoto; vista = Math.min(progreso, TOTAL - 1);
-                localStorage.setItem(CLAVE_PROGRESO, progreso); cambio = true;
-            } else if (remoto < progreso) {
-                guardarEnHoja();
-            }
+            const remota = aLista(resp.hechas, resp.progreso);
+            const cambio = unir(remota);
+            const faltanEnHoja = hechas.some((x, k) => x && !remota[k]);
+            localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+            if (faltanEnHoja) guardarEnHoja();
+            let cambioInstr = false;
             if (resp.instrumento && !instrumento) {
-                instrumento = resp.instrumento; localStorage.setItem(CLAVE_INSTR, instrumento); cambio = true;
+                instrumento = resp.instrumento; localStorage.setItem(CLAVE_INSTR, instrumento); cambioInstr = true;
             }
-            if (cambio) mostrar();
+            if (cambio) vista = siguiente();
+            if (cambio || cambioInstr) mostrar();
         })
         .catch(() => {});
     }
