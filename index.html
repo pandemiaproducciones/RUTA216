@@ -109,11 +109,11 @@
         <form id="formLogin">
             <div class="input-group">
                 <label>USUARIO</label>
-                <input type="text" id="user" required spellcheck="false">
+                <input type="text" id="user" required spellcheck="false" autocapitalize="none" autocorrect="off" autocomplete="username">
             </div>
             <div class="input-group">
                 <label>CONTRASEÑA</label>
-                <input type="password" id="pass" required>
+                <input type="password" id="pass" required autocapitalize="none" autocorrect="off" autocomplete="current-password">
             </div>
             <button type="submit" id="btnEntrar">ENTRAR</button>
         </form>
@@ -155,7 +155,7 @@
             .then(response => {
                 if (response.result === "success") {
                     localStorage.setItem('session_ruta216', JSON.stringify(response));
-                    localStorage.setItem('user_ruta216', datos.usuario);
+                    localStorage.setItem('user_ruta216', response.usuario || datos.usuario);
                     msg.style.color = "#4dff88";
                     msg.innerText = "¡BIENVENIDO/A, " + response.nombre_real.toUpperCase() + "!";
                     
@@ -165,7 +165,7 @@
                     }, 1000);
                 } else {
                     msg.style.color = "#ff4d4d";
-                    msg.innerText = "DATOS INCORRECTOS. REVISA MAYÚSCULAS.";
+                    msg.innerText = "USUARIO O CONTRASEÑA INCORRECTOS.";
                     btn.innerText = "ENTRAR";
                     btn.disabled = false;
                 }

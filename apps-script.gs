@@ -1,4 +1,4 @@
-// RUTA216 v3.0 - SCRIPT DE CONEXIÓN COMPLETO
+// RUTA216 v3.1 - SCRIPT DE CONEXIÓN COMPLETO
 // Hoja "usuarios":
 //   A usuario | B contraseña | C nombre | D instrumento (C, Bb, Eb o F)
 //   E nivel | F escala | G escalas_hechas (0 a 216) | H detalle (lo llena la app)
@@ -16,9 +16,10 @@ function doPost(e) {
     // ACCIÓN: LOGIN
     if (action === "login") {
       for (var i = 1; i < rows.length; i++) {
-        if (rows[i][0].toString() === data.usuario && rows[i][1].toString() === data.contrasena) {
+        if (igual(rows[i][0], data.usuario) && igual(rows[i][1], data.contrasena)) {
           return res({
             result: "success",
+            usuario: String(rows[i][0]),
             nombre_real: rows[i][2],
             instrumento: afinacion(rows[i][3]),
             progreso: Number(rows[i][6]) || 0,
@@ -32,7 +33,7 @@ function doPost(e) {
     // ACCIÓN: LEER EL AVANCE
     if (action === "progreso") {
       for (var i = 1; i < rows.length; i++) {
-        if (rows[i][0].toString() === data.usuario) {
+        if (igual(rows[i][0], data.usuario)) {
           return res({
             result: "success",
             instrumento: afinacion(rows[i][3]),
@@ -47,7 +48,7 @@ function doPost(e) {
     // ACCIÓN: GUARDAR EL AVANCE (nunca borra escalas ya hechas)
     if (action === "guardarProgreso") {
       for (var i = 1; i < rows.length; i++) {
-        if (rows[i][0].toString() === data.usuario) {
+        if (igual(rows[i][0], data.usuario)) {
           var enHoja = aLista(rows[i][7], rows[i][6]);
           var nuevas = aLista(data.hechas, data.progreso);
           var total = 0;
@@ -75,6 +76,14 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// Compara sin importar mayúsculas, tildes ni espacios ("Isabel Sofía G" = "isabelsofiag")
+function limpiar(t) {
+  return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+}
+function igual(a, b) {
+  return limpiar(a) !== "" && limpiar(a) === limpiar(b);
 }
 
 // Texto de 216 "0" y "1" -> lista. Si no hay texto, usa el número (formato viejo).
