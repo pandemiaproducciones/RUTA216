@@ -390,10 +390,10 @@
         const refuerzo = c.createGain();
         refuerzo.gain.value = 2.0;
         const limite = c.createDynamicsCompressor();   // tope final para que nunca recorte
-        limite.threshold.value = -3;
+        limite.threshold.value = -4;
         limite.knee.value = 0;
         limite.ratio.value = 20;
-        limite.attack.value = 0.001;
+        limite.attack.value = 0;
         limite.release.value = 0.1;
         comp.connect(refuerzo); refuerzo.connect(limite); limite.connect(c.destination);
         cadenas.set(c, comp);
@@ -442,16 +442,28 @@
             document.getElementById('btnMetronomo').disabled = false;
         });
 
+    // Metrónomo con sonido de cencerro (dos tonos metálicos filtrados, como el cowbell clásico).
+    // El tiempo 1 suena más agudo y un poco más fuerte.
     function clic(c, destino, cuando, fuerte) {
-        const osc = c.createOscillator();
+        const subir = fuerte ? 1.26 : 1;              // tiempo 1: una tercera mayor más arriba
+        const filtro = c.createBiquadFilter();
+        filtro.type = "bandpass";
+        filtro.frequency.value = 2640 * subir;
+        filtro.Q.value = 1.2;
         const g = c.createGain();
-        osc.type = "square";
-        osc.frequency.value = fuerte ? 1600 : 1000;
+        const pico = fuerte ? 0.6 : 0.45;
         g.gain.setValueAtTime(0.0001, cuando);
-        g.gain.exponentialRampToValueAtTime(fuerte ? 0.6 : 0.4, cuando + 0.002);
-        g.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.06);
-        osc.connect(g); g.connect(destino);
-        osc.start(cuando); osc.stop(cuando + 0.08);
+        g.gain.exponentialRampToValueAtTime(pico, cuando + 0.002);
+        g.gain.exponentialRampToValueAtTime(pico * 0.3, cuando + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.3);
+        [587, 845].forEach(f => {
+            const osc = c.createOscillator();
+            osc.type = "square";
+            osc.frequency.value = f * subir;
+            osc.connect(filtro);
+            osc.start(cuando); osc.stop(cuando + 0.32);
+        });
+        filtro.connect(g); g.connect(destino);
     }
 
     function nota(c, destino, midi, cuando, duracion) {
