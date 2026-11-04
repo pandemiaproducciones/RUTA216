@@ -377,6 +377,29 @@
         try { if (audioMudo) audioMudo.pause(); } catch (e) {}
     }
 
+    // Compresor + refuerzo: el ejemplo suena más fuerte sin distorsionar en el parlante del celular
+    const cadenas = new WeakMap();
+    function cadenaVolumen(c) {
+        if (cadenas.has(c)) return cadenas.get(c);
+        const comp = c.createDynamicsCompressor();
+        comp.threshold.value = -20;
+        comp.knee.value = 6;
+        comp.ratio.value = 4;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.2;
+        const refuerzo = c.createGain();
+        refuerzo.gain.value = 2.0;
+        const limite = c.createDynamicsCompressor();   // tope final para que nunca recorte
+        limite.threshold.value = -3;
+        limite.knee.value = 0;
+        limite.ratio.value = 20;
+        limite.attack.value = 0.001;
+        limite.release.value = 0.1;
+        comp.connect(refuerzo); refuerzo.connect(limite); limite.connect(c.destination);
+        cadenas.set(c, comp);
+        return comp;
+    }
+
     function obtenerCtx() {
         activarModoMusica();
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -425,7 +448,7 @@
         osc.type = "square";
         osc.frequency.value = fuerte ? 1600 : 1000;
         g.gain.setValueAtTime(0.0001, cuando);
-        g.gain.exponentialRampToValueAtTime(fuerte ? 0.35 : 0.22, cuando + 0.002);
+        g.gain.exponentialRampToValueAtTime(fuerte ? 0.6 : 0.4, cuando + 0.002);
         g.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.06);
         osc.connect(g); g.connect(destino);
         osc.start(cuando); osc.stop(cuando + 0.08);
@@ -467,7 +490,7 @@
         const pulso = 60 / d.nivel.bpm;
         const paso = pulso / d.nivel.figura;     // duración de cada nota
         const salida = c.createGain();
-        salida.connect(c.destination);
+        salida.connect(cadenaVolumen(c));
         const inicio = c.currentTime + 0.15;
         const entrada = 4 * pulso;               // 1 compás de entrada
 
