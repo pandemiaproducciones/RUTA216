@@ -1,4 +1,4 @@
-// RUTA216 v2.0 - SCRIPT DE CONEXIÓN COMPLETO
+// RUTA216 v2.1 - SCRIPT DE CONEXIÓN COMPLETO
 // Hoja "usuarios":
 //   A usuario | B contraseña | C nombre_real | D instrumento (C, Bb, Eb o F)
 //   E nivel actual | F escala actual | G escalas hechas (0 a 216)
@@ -13,7 +13,7 @@ function doPost(e) {
     var action = data.action;
     var rows = sheet.getDataRange().getValues();
 
-    // ACCIÓN: LOGIN (igual que antes)
+    // ACCIÓN: LOGIN
     if (action === "login") {
       for (var i = 1; i < rows.length; i++) {
         // Validación exacta de mayúsculas y minúsculas
@@ -21,10 +21,8 @@ function doPost(e) {
           return res({
             result: "success",
             nombre_real: rows[i][2],
-            tonalidad: rows[i][3],
-            nivel_ritmo: rows[i][4],
-            escala_actual: rows[i][5],
-            ejercicio_actual: rows[i][6]
+            instrumento: afinacion(rows[i][3]),
+            progreso: Number(rows[i][6]) || 0
           });
         }
       }
@@ -37,7 +35,7 @@ function doPost(e) {
         if (rows[i][0].toString() === data.usuario) {
           return res({
             result: "success",
-            instrumento: rows[i][3],
+            instrumento: afinacion(rows[i][3]),
             progreso: Number(rows[i][6]) || 0
           });
         }
@@ -76,6 +74,16 @@ function doPost(e) {
 // Función auxiliar para enviar respuestas correctamente
 function res(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Acepta la afinación escrita de varias formas en la hoja (C, Do, Bb, Sib, Si bemol...)
+function afinacion(valor) {
+  var v = String(valor || "").toLowerCase().replace(/\s/g, "").replace(/♭/g, "b").replace("bemol", "b");
+  if (v === "c" || v === "do") return "C";
+  if (v === "bb" || v === "sib") return "Bb";
+  if (v === "eb" || v === "mib") return "Eb";
+  if (v === "f" || v === "fa") return "F";
+  return "";
 }
 
 // Para comprobar que el script está activo (abrir la URL en el navegador)
