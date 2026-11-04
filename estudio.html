@@ -72,7 +72,7 @@
 
         .aviso { font-size: 0.75rem; color: #888; margin-top: 12px; min-height: 1rem; }
 
-        /* Ranking semanal */
+        /* Ranking del día */
         .ranking { margin-top: 24px; background: #1e1e1e; border: 1px solid #333; border-radius: 15px; padding: 16px; }
         .ranking h2 { font-size: 0.8rem; letter-spacing: 2px; color: #ffd166; margin: 0 0 2px; }
         .ranking .sub { font-size: 0.7rem; color: #888; margin-bottom: 12px; }
@@ -159,11 +159,12 @@
         <button class="btn btn-blanco" id="btnEjemplo" disabled>CARGANDO SONIDO…</button>
         <button class="btn btn-gris" id="btnMetronomo" disabled>SOLO METRÓNOMO</button>
         <button class="btn btn-verde" id="btnHecha">✓ YA LA TOQUÉ</button>
+        <button class="btn btn-blanco" id="btnReiniciar" style="display:none">🔄 VOLVER A EMPEZAR</button>
         <div class="aviso" id="aviso"></div>
     </div>
 
     <div class="ranking">
-        <h2>🏆 RANKING SEMANAL</h2>
+        <h2>🏆 RANKING DEL DÍA</h2>
         <div class="sub" id="rankSub">Cargando…</div>
         <div id="rankLista"></div>
         <button class="btn-ver" id="btnVerTodos" style="display:none">VER TODOS</button>
@@ -181,6 +182,16 @@
         <h2>¿Qué instrumento tocas?</h2>
         <p>Así el ejemplo suena en la tonalidad correcta para ti. El nombre de la escala es el que lees en tu partitura.</p>
         <div id="opcionesInstrumento"></div>
+    </div>
+</div>
+
+<!-- Volver a empezar -->
+<div class="fondo" id="ventanaReinicio">
+    <div class="ventana" style="text-align:center">
+        <h2>¿Volver a empezar?</h2>
+        <p>Se borran las 216 escalas marcadas y arrancas otra vez desde C mayor en negras a 80. Tu instrumento se conserva.</p>
+        <button class="btn btn-blanco" id="btnSiReiniciar">SÍ, EMPEZAR DE NUEVO</button>
+        <button class="btn btn-gris" id="btnNoReiniciar">CANCELAR</button>
     </div>
 </div>
 
@@ -255,6 +266,7 @@
     const CLAVE_HECHAS = 'ruta216_hechas_' + usuario;      // 216 caracteres: "1" hecha, "0" pendiente
     const CLAVE_PROGRESO = 'ruta216_progreso_' + usuario;  // formato viejo (solo un número)
     const CLAVE_INSTR = 'ruta216_instrumento_' + usuario;
+    const CLAVE_VUELTA = 'ruta216_vuelta_' + usuario;       // cuántas veces ha reiniciado la ruta
 
     // Convierte un número viejo (N escalas seguidas) o un texto de 0 y 1 en la lista de hechas
     function aLista(texto, numero) {
@@ -270,9 +282,16 @@
 
     let hechas = aLista(localStorage.getItem(CLAVE_HECHAS), localStorage.getItem(CLAVE_PROGRESO));
     let instrumento = localStorage.getItem(CLAVE_INSTR) || "";
+    let vuelta = parseInt(localStorage.getItem(CLAVE_VUELTA) || "1", 10) || 1;
     // lo que trajo el login desde la hoja
     if (sesion) {
-        unir(aLista(sesion.hechas, sesion.progreso));
+        const vh = parseInt(sesion.vuelta, 10) || 1;
+        if (vh > vuelta) {   // reinició en otro celular: se toma lo de la hoja tal cual
+            vuelta = vh; localStorage.setItem(CLAVE_VUELTA, vuelta);
+            hechas = aLista(sesion.hechas, sesion.progreso);
+        } else if (vh === vuelta) {
+            unir(aLista(sesion.hechas, sesion.progreso));
+        }   // si la hoja trae una vuelta anterior, se ignora
         if (!instrumento && ["C","Bb","Eb","F"].includes(String(sesion.instrumento))) {
             instrumento = String(sesion.instrumento); localStorage.setItem(CLAVE_INSTR, instrumento);
         }
@@ -564,9 +583,10 @@
 
         const btnH = document.getElementById('btnHecha');
         btnH.style.display = (!hechas[vista] && disponible(vista)) ? "block" : "none";
+        document.getElementById('btnReiniciar').style.display = cuantas(hechas) >= TOTAL ? "block" : "none";
 
         const n = cuantas(hechas);
-        document.getElementById('txtProgreso').innerText = n + " de " + TOTAL + " escalas";
+        document.getElementById('txtProgreso').innerText = (vuelta > 1 ? "Vuelta " + vuelta + " · " : "") + n + " de " + TOTAL + " escalas";
         document.getElementById('txtPorcentaje').innerText = Math.floor(n * 100 / TOTAL) + "%";
         document.getElementById('barra').style.width = (n * 100 / TOTAL) + "%";
 
@@ -614,7 +634,7 @@
         let texto = d.nombre + " " + d.cat.corto + " (" + d.nivel.nombre + ") lista.";
         if (cuantas(hechas) >= TOTAL) {
             titulo = "¡RUTA 216 COMPLETA!";
-            texto = "Terminaste las 216 escalas. ¡Felicitaciones!";
+            texto = "Terminaste las 216 escalas. ¡Felicitaciones! Cuando quieras, puedes volver a empezar la ruta desde el comienzo.";
         } else if (nivelCompleto(a)) {
             titulo = "¡Velocidad completa!";
             texto = "Terminaste las 36 escalas en " + d.nivel.nombre + "." + (a < NIVELES.length - 1 ? " Se abrieron las mayores en " + NIVELES[a + 1].nombre + "." : "");
@@ -676,7 +696,7 @@
         const r = resumen();
         fetch(URL_SCRIPT, {
             method: "POST",
-            body: JSON.stringify({ action: "guardarProgreso", usuario, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
+            body: JSON.stringify({ action: "guardarProgreso", usuario, vuelta, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
         }).then(() => cargarRanking()).catch(() => {});
     }
 
@@ -689,7 +709,18 @@
         .then(resp => {
             if (resp.result !== "success") return;
             const remota = aLista(resp.hechas, resp.progreso);
-            const cambio = unir(remota);
+            const vh = parseInt(resp.vuelta, 10) || 1;
+            let cambio;
+            if (vh > vuelta) {   // reinició en otro celular
+                vuelta = vh; localStorage.setItem(CLAVE_VUELTA, vuelta);
+                hechas = remota; cambio = true;
+            } else if (vh < vuelta) {
+                // la hoja no se enteró del reinicio (p. ej. sin internet): se le vuelve a avisar
+                avisarReinicio().then(() => guardarEnHoja());
+                return;
+            } else {
+                cambio = unir(remota);
+            }
             const faltanEnHoja = hechas.some((x, k) => x && !remota[k]);
             localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
             if (faltanEnHoja) guardarEnHoja();
@@ -704,7 +735,36 @@
     }
 
     // =========================================================
-    //  RANKING SEMANAL (se reinicia cada lunes a las 0:00)
+    //  VOLVER A EMPEZAR (cuando terminan las 216)
+    // =========================================================
+    function avisarReinicio() {
+        return fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "reiniciar", usuario, vuelta })
+        }).catch(() => {});
+    }
+    document.getElementById('btnReiniciar').onclick = () => {
+        detener();
+        document.getElementById('ventanaReinicio').classList.add('visible');
+    };
+    document.getElementById('btnNoReiniciar').onclick = () => {
+        document.getElementById('ventanaReinicio').classList.remove('visible');
+    };
+    document.getElementById('btnSiReiniciar').onclick = () => {
+        vuelta = vuelta + 1;
+        hechas = new Array(TOTAL).fill(false);
+        localStorage.setItem(CLAVE_VUELTA, vuelta);
+        localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+        localStorage.removeItem(CLAVE_PROGRESO);
+        avisarReinicio().then(() => cargarRanking());
+        vista = siguiente();
+        document.getElementById('ventanaReinicio').classList.remove('visible');
+        mostrar();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    // =========================================================
+    //  RANKING DEL DÍA (se reinicia a medianoche)
     // =========================================================
     let rankDatos = [];
     let rankTodos = false;
@@ -715,10 +775,10 @@
             .then(resp => {
                 if (resp.result !== "success") throw 0;
                 rankDatos = resp.lista || [];
-                const [a, m, d] = String(resp.semana).split("-").map(Number);
-                const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+                const [a, m, d] = String(resp.dia).split("-").map(Number);
+                const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
                 document.getElementById('rankSub').innerText =
-                    "Semana del lunes " + d + " de " + meses[m - 1] + " · se reinicia el próximo lunes a las 0:00";
+                    "Hoy, " + d + " de " + meses[m - 1] + " · se reinicia a medianoche";
                 dibujarRanking();
             })
             .catch(() => { document.getElementById('rankSub').innerText = "No se pudo cargar el ranking."; });
@@ -726,16 +786,16 @@
 
     function filaRanking(p, x) {
         const div = document.createElement('div');
-        div.className = "rk" + (x.yo ? " yo" : "") + (x.semana === 0 ? " cero" : "");
+        div.className = "rk" + (x.yo ? " yo" : "") + (x.hoy === 0 ? " cero" : "");
         const medallas = ["🥇", "🥈", "🥉"];
         const pos = document.createElement('span');
-        pos.className = "pos" + (p < 3 && x.semana > 0 ? " medalla" : "");
-        pos.innerText = (p < 3 && x.semana > 0) ? medallas[p] : (p + 1);
+        pos.className = "pos" + (p < 3 && x.hoy > 0 ? " medalla" : "");
+        pos.innerText = (p < 3 && x.hoy > 0) ? medallas[p] : (p + 1);
         const nom = document.createElement('span');
         nom.className = "nom"; nom.innerText = x.nombre + (x.yo ? " (tú)" : "");
         const num = document.createElement('span');
         num.className = "num";
-        num.innerHTML = x.semana + " <small>" + (x.semana === 1 ? "escala" : "escalas") + "</small>";
+        num.innerHTML = x.hoy + " <small>" + (x.hoy === 1 ? "escala" : "escalas") + "</small>";
         div.append(pos, nom, num);
         return div;
     }
@@ -744,11 +804,11 @@
         const cont = document.getElementById('rankLista');
         const btn = document.getElementById('btnVerTodos');
         cont.innerHTML = "";
-        const activos = rankDatos.filter(x => x.semana > 0);
+        const activos = rankDatos.filter(x => x.hoy > 0);
         const miPos = rankDatos.findIndex(x => x.yo);
 
         if (activos.length === 0) {
-            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado escalas esta semana.<br>¡Sé el primero!</div>';
+            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado escalas hoy.<br>¡Sé el primero!</div>';
             btn.style.display = "none";
             return;
         }
