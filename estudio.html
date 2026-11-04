@@ -72,6 +72,23 @@
 
         .aviso { font-size: 0.75rem; color: #888; margin-top: 12px; min-height: 1rem; }
 
+        /* Ranking semanal */
+        .ranking { margin-top: 24px; background: #1e1e1e; border: 1px solid #333; border-radius: 15px; padding: 16px; }
+        .ranking h2 { font-size: 0.8rem; letter-spacing: 2px; color: #ffd166; margin: 0 0 2px; }
+        .ranking .sub { font-size: 0.7rem; color: #888; margin-bottom: 12px; }
+        .rk { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 0.85rem; }
+        .rk + .rk { margin-top: 4px; }
+        .rk .pos { width: 28px; text-align: center; font-weight: 700; color: #888; font-size: 0.85rem; }
+        .rk .pos.medalla { font-size: 1.2rem; line-height: 1; }
+        .rk .nom { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rk .num { font-weight: 700; color: #4dff88; white-space: nowrap; }
+        .rk .num small { color: #888; font-weight: 400; }
+        .rk.yo { background: #2a2a2a; border: 1px solid #ffd166; }
+        .rk.cero .num { color: #666; }
+        .rk-sep { text-align: center; color: #555; font-size: 0.8rem; margin: 4px 0; }
+        .rk-vacio { font-size: 0.8rem; color: #aaa; text-align: center; padding: 8px 0; }
+        .btn-ver { background: none; border: none; color: #888; font-family: inherit; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; margin-top: 10px; width: 100%; cursor: pointer; padding: 6px; }
+
         /* Mapa de la ruta */
         .ruta { margin-top: 28px; }
         .ruta h2 { font-size: 0.8rem; letter-spacing: 2px; color: #888; margin: 0 0 12px; }
@@ -143,6 +160,13 @@
         <button class="btn btn-gris" id="btnMetronomo" disabled>SOLO METRÓNOMO</button>
         <button class="btn btn-verde" id="btnHecha">✓ YA LA TOQUÉ</button>
         <div class="aviso" id="aviso"></div>
+    </div>
+
+    <div class="ranking">
+        <h2>🏆 RANKING SEMANAL</h2>
+        <div class="sub" id="rankSub">Cargando…</div>
+        <div id="rankLista"></div>
+        <button class="btn-ver" id="btnVerTodos" style="display:none">VER TODOS</button>
     </div>
 
     <div class="ruta">
@@ -626,7 +650,7 @@
         fetch(URL_SCRIPT, {
             method: "POST",
             body: JSON.stringify({ action: "guardarProgreso", usuario, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
-        }).catch(() => {});
+        }).then(() => cargarRanking()).catch(() => {});
     }
 
     function cargarDeHoja() {
@@ -653,10 +677,73 @@
     }
 
     // =========================================================
+    //  RANKING SEMANAL (se reinicia cada lunes a las 0:00)
+    // =========================================================
+    let rankDatos = [];
+    let rankTodos = false;
+
+    function cargarRanking() {
+        fetch(URL_SCRIPT, { method: "POST", body: JSON.stringify({ action: "ranking", usuario }) })
+            .then(r => r.json())
+            .then(resp => {
+                if (resp.result !== "success") throw 0;
+                rankDatos = resp.lista || [];
+                const [a, m, d] = String(resp.semana).split("-").map(Number);
+                const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+                document.getElementById('rankSub').innerText =
+                    "Semana del lunes " + d + " de " + meses[m - 1] + " · se reinicia el próximo lunes a las 0:00";
+                dibujarRanking();
+            })
+            .catch(() => { document.getElementById('rankSub').innerText = "No se pudo cargar el ranking."; });
+    }
+
+    function filaRanking(p, x) {
+        const div = document.createElement('div');
+        div.className = "rk" + (x.yo ? " yo" : "") + (x.semana === 0 ? " cero" : "");
+        const medallas = ["🥇", "🥈", "🥉"];
+        const pos = document.createElement('span');
+        pos.className = "pos" + (p < 3 && x.semana > 0 ? " medalla" : "");
+        pos.innerText = (p < 3 && x.semana > 0) ? medallas[p] : (p + 1);
+        const nom = document.createElement('span');
+        nom.className = "nom"; nom.innerText = x.nombre + (x.yo ? " (tú)" : "");
+        const num = document.createElement('span');
+        num.className = "num";
+        num.innerHTML = x.semana + " <small>" + (x.semana === 1 ? "escala" : "escalas") + "</small>";
+        div.append(pos, nom, num);
+        return div;
+    }
+
+    function dibujarRanking() {
+        const cont = document.getElementById('rankLista');
+        const btn = document.getElementById('btnVerTodos');
+        cont.innerHTML = "";
+        const activos = rankDatos.filter(x => x.semana > 0);
+        const miPos = rankDatos.findIndex(x => x.yo);
+
+        if (activos.length === 0) {
+            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado escalas esta semana.<br>¡Sé el primero!</div>';
+            btn.style.display = "none";
+            return;
+        }
+        const limite = rankTodos ? rankDatos.length : 10;
+        const mostrar = (rankTodos ? rankDatos : activos).slice(0, limite);
+        mostrar.forEach((x, p) => cont.appendChild(filaRanking(p, x)));
+        if (!rankTodos && miPos >= mostrar.length) {
+            const sep = document.createElement('div'); sep.className = "rk-sep"; sep.innerText = "· · ·";
+            cont.appendChild(sep);
+            cont.appendChild(filaRanking(miPos, rankDatos[miPos]));
+        }
+        btn.style.display = rankDatos.length > mostrar.length || rankTodos ? "block" : "none";
+        btn.innerText = rankTodos ? "VER MENOS" : "VER TODOS";
+    }
+    document.getElementById('btnVerTodos').onclick = () => { rankTodos = !rankTodos; dibujarRanking(); };
+
+    // =========================================================
     //  INICIO
     // =========================================================
     mostrar();
     cargarDeHoja();
+    cargarRanking();
     if (!instrumento) abrirInstrumentos();
 </script>
 </body>
