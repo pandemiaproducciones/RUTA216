@@ -225,6 +225,14 @@
 
     let progreso = parseInt(localStorage.getItem(CLAVE_PROGRESO) || "0", 10) || 0; // cuántas escalas lleva
     let instrumento = localStorage.getItem(CLAVE_INSTR) || "";
+    // lo que trajo el login desde la hoja (columna G = escalas hechas, D = instrumento)
+    if (sesion) {
+        const deHoja = parseInt(sesion.ejercicio_actual, 10) || 0;
+        if (deHoja > progreso) { progreso = Math.min(deHoja, TOTAL); localStorage.setItem(CLAVE_PROGRESO, progreso); }
+        if (!instrumento && ["C","Bb","Eb","F"].includes(String(sesion.tonalidad))) {
+            instrumento = String(sesion.tonalidad); localStorage.setItem(CLAVE_INSTR, instrumento);
+        }
+    }
     let vista = Math.min(progreso, TOTAL - 1); // la escala que se está mostrando
 
     document.getElementById('btnSalir').onclick = () => {
@@ -562,9 +570,16 @@
     //   mientras no existan, el avance queda guardado en el celular)
     // =========================================================
     function guardarEnHoja() {
+        // texto legible para la hoja: en qué nivel y escala va
+        let nivel = "TERMINÓ", escala = "RUTA COMPLETA";
+        if (progreso < TOTAL) {
+            const d = datosEscala(progreso);
+            nivel = d.nivel.nombre;
+            escala = d.nombre + " " + d.cat.corto;
+        }
         fetch(URL_SCRIPT, {
             method: "POST",
-            body: JSON.stringify({ action: "guardarProgreso", usuario, progreso, instrumento })
+            body: JSON.stringify({ action: "guardarProgreso", usuario, progreso, instrumento, nivel, escala })
         }).catch(() => {});
     }
 
