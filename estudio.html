@@ -412,7 +412,7 @@
         return t;
     }
 
-    // conEscala = false -> solo metrónomo (8 compases)
+    // conEscala = false -> solo metrónomo (suena hasta que lo detengan)
     async function tocar(conEscala) {
         detener();
         const c = obtenerCtx();
@@ -449,23 +449,50 @@
                 eventosNota.push([t, k]);
             });
         } else {
-            totalPulsos = 4 + 32;
-        }
-
-        for (let p = 0; p < totalPulsos; p++) {
-            clic(c, salida, inicio + p * pulso, p % 4 === 0);
+            totalPulsos = Infinity;
         }
 
         reproduccion = {
             salida, inicio, pulso, totalPulsos, eventosNota, conEscala,
             fin: inicio + totalPulsos * pulso
         };
+
+        if (conEscala) {
+            for (let p = 0; p < totalPulsos; p++) clic(c, salida, inicio + p * pulso, p % 4 === 0);
+        } else {
+            // Metrónomo sin fin: programa los clics un poco por adelantado, una y otra vez
+            const r = reproduccion;
+            r.siguiente = 0;
+            const programar = () => {
+                while (inicio + r.siguiente * pulso < c.currentTime + 1.5) {
+                    clic(c, salida, inicio + r.siguiente * pulso, r.siguiente % 4 === 0);
+                    r.siguiente++;
+                }
+            };
+            programar();
+            r.timer = setInterval(programar, 200);
+        }
+        mantenerPantalla(true);
         document.getElementById('btnEjemplo').innerText = conEscala ? "■ DETENER" : "▶ ESCUCHAR EJEMPLO";
         document.getElementById('btnMetronomo').innerText = conEscala ? "SOLO METRÓNOMO" : "■ DETENER METRÓNOMO";
         requestAnimationFrame(animar);
     }
 
+    // Evita que el celular apague la pantalla (y el sonido) mientras suena
+    let candado = null;
+    async function mantenerPantalla(si) {
+        try {
+            if (si && !candado && navigator.wakeLock) candado = await navigator.wakeLock.request('screen');
+            if (!si && candado) { await candado.release(); candado = null; }
+        } catch (e) { candado = null; }
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && reproduccion) { candado = null; mantenerPantalla(true); }
+    });
+
     function detener() {
+        if (reproduccion && reproduccion.timer) clearInterval(reproduccion.timer);
+        mantenerPantalla(false);
         if (reproduccion) {
             try {
                 reproduccion.salida.gain.setValueAtTime(reproduccion.salida.gain.value, ctx.currentTime);
