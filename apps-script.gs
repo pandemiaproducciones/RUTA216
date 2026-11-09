@@ -197,7 +197,7 @@ function hoy() {
 
 // Compara sin importar mayúsculas, tildes ni espacios ("Isabel Sofía G" = "isabelsofiag")
 function limpiar(t) {
-  return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
+  return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
 }
 function igual(a, b) {
   return limpiar(a) !== "" && limpiar(a) === limpiar(b);
