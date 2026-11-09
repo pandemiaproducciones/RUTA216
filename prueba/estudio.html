@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESCALANDO · Estudio</title>
+    <title>RUTINA · Escalas</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -141,13 +141,13 @@
         <div class="marca">
             <img src="../logo.png" alt="PAISA">
             <div>
-                <h1>ESCALANDO</h1>
+                <h1>ESCALAS</h1>
                 <div class="quien" id="quien"></div>
             </div>
         </div>
         <div class="botones">
             <button class="btn-chico" id="btnInstrumento">INSTRUMENTO</button>
-            <button class="btn-chico" id="btnSalir">SALIR</button>
+            <button class="btn-chico" id="btnSalir">← MENÚ</button>
         </div>
     </header>
 
@@ -370,8 +370,7 @@
 
     document.getElementById('btnSalir').onclick = () => {
         detener();
-        localStorage.removeItem('session_escalando');
-        window.location.href = "index.html";
+        window.location.href = "menu.html";
     };
 
     // =========================================================

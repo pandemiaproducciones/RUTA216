@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUTINA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .app { max-width: 480px; margin: 0 auto; padding: 28px 16px 40px; }
+        .cabeza { text-align: center; margin-bottom: 28px; }
+        .cabeza img { width: 110px; height: auto; display: block; margin: 0 auto 14px; }
+        .cabeza h1 { font-size: 1.8rem; letter-spacing: 6px; margin: 0; }
+        .cabeza .quien { font-size: 0.8rem; color: #888; letter-spacing: 1px; margin-top: 6px; }
+
+        .opcion {
+            display: block; width: 100%; text-align: left; text-decoration: none; color: #fff;
+            background: #1e1e1e; border: 1px solid #333; border-radius: 15px;
+            padding: 20px 18px; margin-bottom: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            transition: transform 0.1s, border-color 0.2s;
+        }
+        .opcion:active { transform: scale(0.98); }
+        .opcion:hover { border-color: #ffd166; }
+        .opcion .fila { display: flex; justify-content: space-between; align-items: center; }
+        .opcion h2 { margin: 0; font-size: 1.3rem; letter-spacing: 3px; }
+        .opcion .flecha { color: #ffd166; font-size: 1.4rem; font-weight: 700; }
+        .opcion p { margin: 6px 0 14px; font-size: 0.8rem; color: #aaa; }
+        .opcion .texto { display: flex; justify-content: space-between; font-size: 0.72rem; color: #888; font-weight: 600; margin-bottom: 6px; }
+        .barra { height: 8px; background: #2a2a2a; border-radius: 4px; overflow: hidden; }
+        .barra div { height: 100%; background: #4dff88; width: 0; transition: width 0.5s; }
+
+        .salir {
+            display: block; margin: 26px auto 0; background: none; border: 1px solid #444; color: #aaa;
+            border-radius: 8px; padding: 10px 22px; font-family: inherit; font-size: 0.75rem;
+            font-weight: 700; letter-spacing: 1px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="cabeza">
+        <img src="../logo.png" alt="PAISA">
+        <h1>RUTINA</h1>
+        <div class="quien" id="quien"></div>
+    </div>
+
+    <a class="opcion" href="estudio.html">
+        <div class="fila"><h2>ESCALAS</h2><span class="flecha">→</span></div>
+        <p>Escalas, terceras conjuntas y terceras disjuntas</p>
+        <div class="texto"><span id="txtEscalas">0 de 648</span><span id="pctEscalas">0%</span></div>
+        <div class="barra"><div id="barEscalas"></div></div>
+    </a>
+
+    <a class="opcion" href="complemento.html">
+        <div class="fila"><h2>COMPLEMENTO</h2><span class="flecha">→</span></div>
+        <p>Arpegio + cromática</p>
+        <div class="texto"><span id="txtComp">0 de 72</span><span id="pctComp">0%</span></div>
+        <div class="barra"><div id="barComp"></div></div>
+    </a>
+
+    <button class="salir" id="btnSalir">SALIR</button>
+</div>
+
+<script>
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbx_Ftgd1QNQPe4XhOvQm2YcZLiOMBQTjvCh9s1EaWWpnQd_PGHmJQSfRcNOQLn_QbwR/exec";
+    const TOTAL_ESCALAS = 648, TOTAL_COMP = 72;
+
+    let sesion = null;
+    try { sesion = JSON.parse(localStorage.getItem('session_escalando')); } catch (e) {}
+    const usuario = localStorage.getItem('user_escalando');
+    if (!sesion || !usuario) { window.location.href = "index.html"; }
+
+    const nombreReal = (sesion && sesion.nombre_real) ? sesion.nombre_real : usuario;
+    document.getElementById('quien').innerText = (nombreReal || "").toUpperCase();
+
+    // Cuenta los "1" de un texto de avance (el formato viejo de 216 también sirve para contar)
+    const unos = t => (String(t || "").match(/1/g) || []).length;
+    function leer(clave) { try { return localStorage.getItem(clave) || ""; } catch (e) { return ""; } }
+
+    function pintar(escalas, comp) {
+        const e = Math.min(escalas, TOTAL_ESCALAS), c = Math.min(comp, TOTAL_COMP);
+        document.getElementById('txtEscalas').innerText = e + " de " + TOTAL_ESCALAS + " ejercicios";
+        document.getElementById('pctEscalas').innerText = Math.floor(e * 100 / TOTAL_ESCALAS) + "%";
+        document.getElementById('barEscalas').style.width = (e * 100 / TOTAL_ESCALAS) + "%";
+        document.getElementById('txtComp').innerText = c + " de " + TOTAL_COMP + " ejercicios";
+        document.getElementById('pctComp').innerText = Math.floor(c * 100 / TOTAL_COMP) + "%";
+        document.getElementById('barComp').style.width = (c * 100 / TOTAL_COMP) + "%";
+    }
+
+    // Primero lo guardado en el celular; luego lo de la hoja si es más
+    let escalas = Math.max(unos(leer('escalando_hechas_' + usuario)), unos(sesion && sesion.hechas));
+    let comp = Math.max(unos(leer('escalando_comp_hechas_' + usuario)), unos(sesion && sesion.complemento));
+    pintar(escalas, comp);
+
+    fetch(URL_SCRIPT, { method: "POST", body: JSON.stringify({ action: "progreso", formato: 648, usuario }) })
+        .then(r => r.json())
+        .then(resp => {
+            if (resp.result !== "success") return;
+            escalas = Math.max(escalas, unos(resp.hechas));
+            comp = Math.max(comp, unos(resp.complemento));
+            pintar(escalas, comp);
+        })
+        .catch(() => {});
+
+    document.getElementById('btnSalir').onclick = () => {
+        localStorage.removeItem('session_escalando');
+        window.location.href = "index.html";
+    };
+</script>
+</body>
+</html>
