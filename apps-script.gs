@@ -1,9 +1,10 @@
-// ESCALANDO (antes RUTA216) v6.0 - SCRIPT DE CONEXIÓN COMPLETO
+// RUTINA v7.0 (ESCALAS + COMPLEMENTO) - SCRIPT DE CONEXIÓN COMPLETO
 // Hoja "usuarios":
 //   A usuario | B contraseña | C nombre | D instrumento (C, Bb, Eb o F)
 //   E nivel | F ejercicio actual | G ejercicios hechos (0 a 648) | H detalle (lo llena la app)
 //   I nombre completo | J instrumento real | K grado   (solo referencia)
 //   L último ejercicio (fecha) | M día | N ejercicios ese día | O vuelta   (lo llena la app)
+//   COMPLEMENTO: P hechos | Q detalle | R día | S hechos ese día | T ejercicio actual   (lo llena la app)
 // El ranking es diario: se reinicia a medianoche (hora de Colombia).
 //
 // 648 ejercicios = 6 velocidades x 3 familias x 3 tipos (escala, terceras conjuntas,
@@ -39,7 +40,8 @@ function doPost(e) {
             instrumento: afinacion(rows[i][3]),
             progreso: contar(l),
             hechas: nuevo ? aTexto(l) : aTextoViejo(l),
-            vuelta: Number(rows[i][14]) || 1
+            vuelta: Number(rows[i][14]) || 1,
+            complemento: textoCeros(rows[i][16])
           });
         }
       }
@@ -56,7 +58,8 @@ function doPost(e) {
             instrumento: afinacion(rows[i][3]),
             progreso: contar(l),
             hechas: nuevo ? aTexto(l) : aTextoViejo(l),
-            vuelta: Number(rows[i][14]) || 1
+            vuelta: Number(rows[i][14]) || 1,
+            complemento: textoCeros(rows[i][16])
           });
         }
       }
@@ -101,6 +104,43 @@ function doPost(e) {
         }
       }
       return res({result: "error", message: "Usuario no encontrado"});
+    }
+
+    // ACCIÓN: GUARDAR AVANCE DE COMPLEMENTO (nunca borra lo ya hecho)
+    if (action === "guardarComplemento") {
+      for (var i = 1; i < rows.length; i++) {
+        if (igual(rows[i][0], data.usuario)) {
+          var u = unirTextos(textoCeros(rows[i][16]), textoCeros(data.hechas));
+          sheet.getRange(i + 1, 16, 1, 2).setValues([[u.total, "'" + u.texto]]);
+          sheet.getRange(i + 1, 20).setValue(data.actual || "");
+          if (u.nuevos > 0) {
+            var dia = hoy();
+            var deHoy = String(rows[i][17] || "") === dia ? (Number(rows[i][18]) || 0) : 0;
+            sheet.getRange(i + 1, 18, 1, 2).setValues([["'" + dia, deHoy + u.nuevos]]);
+          }
+          return res({result: "success", hechas: u.texto, progreso: u.total});
+        }
+      }
+      return res({result: "error", message: "Usuario no encontrado"});
+    }
+
+    // ACCIÓN: RANKING DEL DÍA DE COMPLEMENTO
+    if (action === "rankingComplemento") {
+      var dia = hoy();
+      var lista = [];
+      for (var i = 1; i < rows.length; i++) {
+        var usuario = String(rows[i][0] || "");
+        if (usuario === "" || NO_COMPITEN.indexOf(limpiar(usuario)) >= 0) continue;
+        var n = String(rows[i][17] || "") === dia ? (Number(rows[i][18]) || 0) : 0;
+        lista.push({
+          nombre: String(rows[i][2] || usuario),
+          hoy: n,
+          total: Number(rows[i][15]) || 0,
+          yo: igual(usuario, data.usuario)
+        });
+      }
+      lista.sort(function (a, b) { return (b.hoy - a.hoy) || (b.total - a.total); });
+      return res({result: "success", dia: dia, lista: lista});
     }
 
     // ACCIÓN: VOLVER A EMPEZAR (borra todo y suma una vuelta)
@@ -202,6 +242,21 @@ function aTextoViejo(l) {
   return t;
 }
 
+// COMPLEMENTO: texto de "0" y "1" de cualquier largo (crece cuando se agregan ejercicios)
+function textoCeros(t) {
+  t = String(t || "");
+  return /^[01]+$/.test(t) ? t : "";
+}
+function unirTextos(a, b) {
+  var n = Math.max(a.length, b.length), texto = "", nuevos = 0, total = 0;
+  for (var k = 0; k < n; k++) {
+    var ya = a.charAt(k) === "1", llega = b.charAt(k) === "1";
+    if (llega && !ya) nuevos++;
+    if (ya || llega) { texto += "1"; total++; } else texto += "0";
+  }
+  return {texto: texto, nuevos: nuevos, total: total};
+}
+
 function contar(l) {
   var n = 0;
   for (var k = 0; k < TOTAL; k++) if (l[k]) n++;
@@ -223,5 +278,5 @@ function afinacion(valor) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput("ESCALANDO activo").setMimeType(ContentService.MimeType.TEXT);
+  return ContentService.createTextOutput("RUTINA activo").setMimeType(ContentService.MimeType.TEXT);
 }
