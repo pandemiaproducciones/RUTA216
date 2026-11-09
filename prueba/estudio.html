@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESCALANDO · Estudio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #121212;
+            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+
+        /* Encabezado */
+        header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+        header .botones { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+        .marca { display: flex; align-items: center; gap: 10px; }
+        .marca img { width: 44px; height: auto; display: block; }
+        header h1 { font-size: 1.05rem; letter-spacing: 2px; margin: 0; }
+        header .quien { font-size: 0.7rem; color: #888; letter-spacing: 1px; margin-top: 2px; }
+        .btn-chico {
+            background: none; border: 1px solid #444; color: #aaa; border-radius: 8px;
+            padding: 8px 10px; font-family: inherit; font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 1px; cursor: pointer;
+        }
+
+        /* Progreso */
+        .progreso { margin-bottom: 18px; }
+        .progreso .texto { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 6px; font-weight: 600; }
+        .barra { height: 8px; background: #2a2a2a; border-radius: 4px; overflow: hidden; }
+        .barra div { height: 100%; background: #4dff88; width: 0; transition: width 0.5s; }
+
+        /* Tarjeta principal */
+        .tarjeta {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 15px;
+            padding: 22px 18px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .etiqueta { font-size: 0.7rem; color: #888; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
+        .nivel { font-size: 1rem; font-weight: 700; margin: 6px 0 14px; color: #ffd166; }
+        .nombre-escala { font-size: 2.2rem; font-weight: 700; margin: 4px 0 2px; line-height: 1.1; }
+        .tipo-ej { display: inline-block; margin: 8px 0 6px; padding: 5px 12px; border-radius: 20px; background: #ffd166; color: #000; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; }
+        .tipo { font-size: 0.8rem; color: #bbb; margin-bottom: 18px; }
+        .repaso { font-size: 0.7rem; color: #ffd166; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
+
+        .pulsos { display: flex; justify-content: center; gap: 12px; margin: 6px 0 14px; }
+        .pulsos span { width: 14px; height: 14px; border-radius: 50%; background: #333; transition: background 0.05s; }
+        .pulsos span.on { background: #fff; }
+        .pulsos span.on.fuerte { background: #ffd166; }
+
+        .notas { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; min-height: 30px; margin-bottom: 18px; }
+        .notas span {
+            min-width: 26px; padding: 5px 4px; border-radius: 6px; background: #2a2a2a;
+            font-size: 0.75rem; font-weight: 700; color: #888;
+        }
+        .notas span.arp { background: #23303a; }
+        .notas span.fin-grupo { margin-right: 6px; }
+        .notas span.abajo { box-shadow: inset 0 -3px 0 #666; }
+        .notas span.silencio { background: none; border: 1px dashed #ffd166; color: #ffd166; font-weight: 600; font-style: italic; padding: 5px 8px; }
+        .notas span.on { background: #fff; color: #000; }
+        .cuenta { font-size: 0.8rem; color: #ffd166; font-weight: 700; min-height: 1.1rem; margin-bottom: 8px; }
+
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 10px; font-family: inherit;
+            font-weight: 700; font-size: 1rem; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 1px; margin-top: 10px; transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; }
+        .btn-blanco { background: #fff; color: #000; }
+        .btn-verde { background: #4dff88; color: #000; }
+        .btn-gris { background: #2a2a2a; color: #fff; border: 1px solid #444; font-size: 0.8rem; padding: 12px; }
+
+        .aviso { font-size: 0.75rem; color: #888; margin-top: 12px; min-height: 1rem; }
+
+        /* Ranking del día */
+        .ranking { margin-top: 24px; background: #1e1e1e; border: 1px solid #333; border-radius: 15px; padding: 16px; }
+        .ranking h2 { font-size: 0.8rem; letter-spacing: 2px; color: #ffd166; margin: 0 0 2px; }
+        .ranking .sub { font-size: 0.7rem; color: #888; margin-bottom: 12px; }
+        .rk { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 0.85rem; }
+        .rk + .rk { margin-top: 4px; }
+        .rk .pos { width: 28px; text-align: center; font-weight: 700; color: #888; font-size: 0.85rem; }
+        .rk .pos.medalla { font-size: 1.2rem; line-height: 1; }
+        .rk .nom { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rk .num { font-weight: 700; color: #4dff88; white-space: nowrap; }
+        .rk .num small { color: #888; font-weight: 400; }
+        .rk.yo { background: #2a2a2a; border: 1px solid #ffd166; }
+        .rk.cero .num { color: #666; }
+        .rk-sep { text-align: center; color: #555; font-size: 0.8rem; margin: 4px 0; }
+        .rk-vacio { font-size: 0.8rem; color: #aaa; text-align: center; padding: 8px 0; }
+        .btn-ver { background: none; border: none; color: #888; font-family: inherit; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; margin-top: 10px; width: 100%; cursor: pointer; padding: 6px; }
+
+        /* Mapa de la ruta */
+        .ruta { margin-top: 28px; }
+        .ruta h2 { font-size: 0.8rem; letter-spacing: 2px; color: #888; margin: 0 0 12px; }
+        .bloque { margin-bottom: 10px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 0 12px; }
+        .bloque summary { list-style: none; cursor: pointer; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; color: #ffd166; }
+        .bloque summary::-webkit-details-marker { display: none; }
+        .bloque summary .cuenta-nivel { color: #888; font-weight: 600; font-size: 0.7rem; }
+        .bloque summary::after { content: "▾"; color: #888; margin-left: 8px; }
+        .bloque[open] summary::after { content: "▴"; }
+        .bloque[open] { padding-bottom: 12px; }
+        .fila-tipo { font-size: 0.6rem; color: #666; letter-spacing: 1px; font-weight: 700; margin: 6px 0 4px; }
+        .fila-cat { font-size: 0.65rem; color: #aaa; letter-spacing: 1px; font-weight: 700; margin: 12px 0 2px; }
+        .casillas { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+        .casillas button {
+            padding: 8px 0; border-radius: 6px; border: 1px solid #333; background: #1a1a1a;
+            color: #555; font-family: inherit; font-size: 0.7rem; font-weight: 700; cursor: default;
+        }
+        .casillas button.hecha { background: #1f3a2a; color: #4dff88; border-color: #2c5a3e; cursor: pointer; }
+        .casillas button.actual { background: #fff; color: #000; border-color: #fff; cursor: pointer; }
+        .casillas button.vista { outline: 2px solid #ffd166; }
+
+        /* Ventanas emergentes */
+        .fondo {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+            align-items: center; justify-content: center; padding: 16px; z-index: 10;
+        }
+        .fondo.visible { display: flex; }
+        .ventana { background: #1e1e1e; border: 1px solid #333; border-radius: 15px; padding: 22px 18px; width: 100%; max-width: 380px; }
+        .ventana h2 { margin: 0 0 6px; font-size: 1.1rem; }
+        .ventana p { font-size: 0.8rem; color: #aaa; margin: 0 0 14px; line-height: 1.4; }
+        .opcion {
+            display: block; width: 100%; text-align: left; background: #2a2a2a; color: #fff;
+            border: 1px solid #444; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+            font-family: inherit; cursor: pointer;
+        }
+        .opcion b { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+        .opcion small { color: #999; font-size: 0.72rem; }
+        .opcion.elegida { border-color: #4dff88; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header>
+        <div class="marca">
+            <img src="../logo.png" alt="PAISA">
+            <div>
+                <h1>ESCALANDO</h1>
+                <div class="quien" id="quien"></div>
+            </div>
+        </div>
+        <div class="botones">
+            <button class="btn-chico" id="btnInstrumento">INSTRUMENTO</button>
+            <button class="btn-chico" id="btnSalir">SALIR</button>
+        </div>
+    </header>
+
+    <div class="progreso">
+        <div class="texto"><span id="txtProgreso">0 de 648</span><span id="txtPorcentaje">0%</span></div>
+        <div class="barra"><div id="barra"></div></div>
+    </div>
+
+    <div class="tarjeta">
+        <div class="repaso" id="repaso"></div>
+        <div class="etiqueta" id="etiquetaCat">Escalas mayores</div>
+        <div class="nivel" id="nivel">Negras a 80</div>
+        <div class="nombre-escala" id="nombreEscala">C mayor</div>
+        <div class="tipo-ej" id="tipoEj">ESCALA</div>
+        <div class="tipo" id="tipo">1 octava · subir, bajar y arpegio</div>
+
+        <div class="cuenta" id="cuenta"></div>
+        <div class="pulsos" id="pulsos"><span></span><span></span><span></span><span></span></div>
+        <div class="notas" id="notas"></div>
+
+        <button class="btn btn-blanco" id="btnEjemplo" disabled>CARGANDO SONIDO…</button>
+        <button class="btn btn-gris" id="btnMetronomo" disabled>SOLO METRÓNOMO</button>
+        <button class="btn btn-verde" id="btnHecha">✓ YA LA TOQUÉ</button>
+        <button class="btn btn-blanco" id="btnReiniciar" style="display:none">🔄 VOLVER A EMPEZAR</button>
+        <div class="aviso" id="aviso"></div>
+    </div>
+
+    <div class="ranking">
+        <h2>🏆 RANKING DEL DÍA</h2>
+        <div class="sub" id="rankSub">Cargando…</div>
+        <div id="rankLista"></div>
+        <button class="btn-ver" id="btnVerTodos" style="display:none">VER TODOS</button>
+    </div>
+
+    <div class="ruta">
+        <h2>MI RUTA</h2>
+        <div id="mapa"></div>
+    </div>
+</div>
+
+<!-- Elegir instrumento -->
+<div class="fondo" id="ventanaInstrumento">
+    <div class="ventana">
+        <h2>¿Qué instrumento tocas?</h2>
+        <p>Así el ejemplo suena en la tonalidad correcta para ti. El nombre de la escala es el que lees en tu partitura.</p>
+        <div id="opcionesInstrumento"></div>
+    </div>
+</div>
+
+<!-- Volver a empezar -->
+<div class="fondo" id="ventanaReinicio">
+    <div class="ventana" style="text-align:center">
+        <h2>¿Volver a empezar?</h2>
+        <p>Se borran los 648 ejercicios marcados y arrancas otra vez desde la escala de C mayor en negras a 80. Tu instrumento se conserva.</p>
+        <button class="btn btn-blanco" id="btnSiReiniciar">SÍ, EMPEZAR DE NUEVO</button>
+        <button class="btn btn-gris" id="btnNoReiniciar">CANCELAR</button>
+    </div>
+</div>
+
+<!-- Felicitación -->
+<div class="fondo" id="ventanaLogro">
+    <div class="ventana" style="text-align:center">
+        <h2 id="logroTitulo">¡Bien hecho!</h2>
+        <p id="logroTexto"></p>
+        <button class="btn btn-blanco" id="btnCerrarLogro">SIGUIENTE</button>
+    </div>
+</div>
+
+<script>
+    // =========================================================
+    //  CONFIGURACIÓN (aquí se cambia lo musical)
+    // =========================================================
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbx_Ftgd1QNQPe4XhOvQm2YcZLiOMBQTjvCh9s1EaWWpnQd_PGHmJQSfRcNOQLn_QbwR/exec";
+
+    // Los 6 niveles, en orden. figura: 1 = negras, 2 = corcheas
+    const NIVELES = [
+        { nombre: "Negras a 80",   bpm: 80,  figura: 1 },
+        { nombre: "Negras a 100",  bpm: 100, figura: 1 },
+        { nombre: "Negras a 120",  bpm: 120, figura: 1 },
+        { nombre: "Corcheas a 80",  bpm: 80,  figura: 2 },
+        { nombre: "Corcheas a 100", bpm: 100, figura: 2 },
+        { nombre: "Corcheas a 120", bpm: 120, figura: 2 }
+    ];
+
+
+    // Las 3 familias, cada una con sus 12 tonalidades en el orden en que se estudian
+    const CATEGORIAS = [
+        { nombre: "Mayores", corto: "mayor",
+          grados: [0,2,4,5,7,9,11,12], arpegio: [2,4,7],
+          orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] },
+        { nombre: "Menores naturales", corto: "menor",
+          grados: [0,2,3,5,7,8,10,12], arpegio: [2,4,7],
+          orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] },
+        { nombre: "Menores armónicas", corto: "menor armónica",
+          grados: [0,2,3,5,7,8,11,12], arpegio: [2,4,6,7],
+          orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] }
+    ];
+    // arpegio = posiciones dentro de la escala (0=1er grado ... 7=octava).
+    // Mayor/menor: 1-3-5-8-5-3-1.  Armónica: 1-3-5-7(alterado)-8-7-5-3-1.
+
+    // Afinaciones. "baja" = cuántos semitonos suena más abajo de lo escrito
+    const INSTRUMENTOS = [
+        { id: "C",  nombre: "Instrumento en Do",  ejemplos: "Flauta, oboe, fagot, trombón, bombardino (clave de fa), tuba, percusión", baja: 0 },
+        { id: "Bb", nombre: "Instrumento en Si♭", ejemplos: "Clarinete, trompeta, saxo tenor, saxo soprano, clarinete bajo, bombardino (clave de sol)", baja: 2 },
+        { id: "Eb", nombre: "Instrumento en Mi♭", ejemplos: "Saxo alto, saxo barítono, clarinete requinto", baja: 9 },
+        { id: "F",  nombre: "Instrumento en Fa",  ejemplos: "Corno francés", baja: 7 }
+    ];
+
+    // Registro del trombón: la tónica real del ejemplo cae entre Lab2 y Sol3
+    const TONICA_MAS_GRAVE = 44;   // (las terceras bajan hasta 2 semitonos más y suben hasta la 9ª)
+
+    // Afinación del ejemplo: La = 442 Hz (los sonidos originales vienen en 440)
+    const LA = 442;
+
+    // Los 3 tipos de ejercicio de cada familia, en este orden
+    const TIPOS = [
+        { nombre: "Escala",             desc: "1 octava · subir, bajar y arpegio" },
+        { nombre: "Terceras conjuntas", desc: "Grupos de 3 notas · hasta la 9ª y bajando hasta la 7ª" },
+        { nombre: "Terceras disjuntas", desc: "Saltos de tercera · hasta la 9ª y bajando hasta la 7ª" }
+    ];
+
+    // Cada ejercicio tiene un número: velocidad*108 + familia*36 + tipo*12 + tonalidad
+    const POR_NIVEL = CATEGORIAS.length * TIPOS.length * 12;   // 108
+    const TOTAL = NIVELES.length * POR_NIVEL;                  // 648
+
+    // =========================================================
+    //  SESIÓN
+    // =========================================================
+    let sesion = null;
+    try { sesion = JSON.parse(localStorage.getItem('session_escalando')); } catch (e) {}
+    const usuario = localStorage.getItem('user_escalando');
+    if (!sesion || !usuario) { window.location.href = "index.html"; }
+
+    const nombreReal = (sesion && sesion.nombre_real) ? sesion.nombre_real : usuario;
+    document.getElementById('quien').innerText = (nombreReal || "").toUpperCase();
+
+    const CLAVE_HECHAS = 'escalando_hechas_' + usuario;      // 648 caracteres: "1" hecho, "0" pendiente
+    const CLAVE_PROGRESO = 'escalando_progreso_' + usuario;  // formato viejo (solo un número)
+    const CLAVE_INSTR = 'escalando_instrumento_' + usuario;
+    const CLAVE_VUELTA = 'escalando_vuelta_' + usuario;       // cuántas veces ha reiniciado la ruta
+
+    // Formato viejo (216 = solo escalas): posición de esa escala en el formato nuevo
+    function nuevoIndice(i) {
+        const a = Math.floor(i / 36), b = Math.floor((i % 36) / 12), k = i % 12;
+        return a * POR_NIVEL + b * 36 + k;
+    }
+    // Convierte un texto de 0 y 1 (nuevo o viejo) o un número viejo en la lista de hechos
+    function aLista(texto, numero) {
+        const l = new Array(TOTAL).fill(false);
+        const t = String(texto || "");
+        if (/^[01]+$/.test(t)) {
+            if (t.length === 216) { for (let i = 0; i < 216; i++) if (t[i] === "1") l[nuevoIndice(i)] = true; }
+            else { for (let k = 0; k < TOTAL && k < t.length; k++) l[k] = t[k] === "1"; }
+        } else {
+            const n = Math.min(parseInt(numero, 10) || 0, 216);
+            for (let i = 0; i < n; i++) l[nuevoIndice(i)] = true;
+        }
+        return l;
+    }
+    const aTexto = l => l.map(x => x ? "1" : "0").join("");
+    const cuantas = l => l.filter(Boolean).length;
+    function unir(otra) { let cambio = false; otra.forEach((x, k) => { if (x && !hechas[k]) { hechas[k] = true; cambio = true; } }); return cambio; }
+
+    let hechas = aLista(localStorage.getItem(CLAVE_HECHAS), localStorage.getItem(CLAVE_PROGRESO));
+    let instrumento = localStorage.getItem(CLAVE_INSTR) || "";
+    let vuelta = parseInt(localStorage.getItem(CLAVE_VUELTA) || "1", 10) || 1;
+    // lo que trajo el login desde la hoja
+    if (sesion) {
+        const vh = parseInt(sesion.vuelta, 10) || 1;
+        if (vh > vuelta) {   // reinició en otro celular: se toma lo de la hoja tal cual
+            vuelta = vh; localStorage.setItem(CLAVE_VUELTA, vuelta);
+            hechas = aLista(sesion.hechas, sesion.progreso);
+        } else if (vh === vuelta) {
+            unir(aLista(sesion.hechas, sesion.progreso));
+        }   // si la hoja trae una vuelta anterior, se ignora
+        if (!instrumento && ["C","Bb","Eb","F"].includes(String(sesion.instrumento))) {
+            instrumento = String(sesion.instrumento); localStorage.setItem(CLAVE_INSTR, instrumento);
+        }
+    }
+    localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+
+    // ---- Reglas de desbloqueo ----
+    // En cada velocidad: las mayores van en orden estricto (escalas C, G, D… → terceras conjuntas → disjuntas).
+    // Al terminar las 36 de mayores se abren las 72 de menores (naturales y armónicas), en cualquier orden.
+    // Al completar los 108 ejercicios de una velocidad se abre la siguiente.
+    function nivelCompleto(a) { for (let k = a * POR_NIVEL; k < (a + 1) * POR_NIVEL; k++) if (!hechas[k]) return false; return true; }
+    function mayoresCompletas(a) { for (let k = a * POR_NIVEL; k < a * POR_NIVEL + 36; k++) if (!hechas[k]) return false; return true; }
+    function disponible(i) {
+        const a = Math.floor(i / POR_NIVEL), j = i % POR_NIVEL;
+        if (a > 0 && !nivelCompleto(a - 1)) return false;
+        if (j < 36) { for (let k = a * POR_NIVEL; k < i; k++) if (!hechas[k]) return false; return true; }
+        return mayoresCompletas(a);
+    }
+    function siguiente() {
+        for (let i = 0; i < TOTAL; i++) if (!hechas[i] && disponible(i)) return i;
+        return TOTAL - 1;
+    }
+    let vista = siguiente(); // la escala que se está mostrando
+
+    document.getElementById('btnSalir').onclick = () => {
+        detener();
+        localStorage.removeItem('session_escalando');
+        window.location.href = "index.html";
+    };
+
+    // =========================================================
+    //  DATOS DE CADA ESCALA
+    // =========================================================
+    function datosEscala(i) {
+        const nivel = NIVELES[Math.floor(i / POR_NIVEL)];
+        const j = i % POR_NIVEL;
+        const cat = CATEGORIAS[Math.floor(j / 36)];
+        const t = Math.floor((j % 36) / 12);
+        const [notaEscrita, nombre] = cat.orden[i % 12];
+        return { i, nivel, cat, t, tipo: TIPOS[t], notaEscrita, nombre };
+    }
+    function nombreEjercicio(d) { return d.nombre + " " + d.cat.corto + " · " + d.tipo.nombre; }
+
+    // Semitonos desde la tónica para un grado (0 = tónica, 7 = octava, 8 = novena, -1 = séptima de abajo)
+    function semitonos(pos, cat) {
+        return 12 * Math.floor(pos / 7) + cat.grados[((pos % 7) + 7) % 7];
+    }
+    function etiquetaGrado(pos, cat) {
+        if (pos === 7) return "8";
+        if (pos === 8) return "9";
+        const arm = cat.corto === "menor armónica";
+        if (pos === 6 || pos === -1) return arm ? "7↑" : "7";
+        return String(pos + 1);
+    }
+
+    // Qué se toca en cada ejercicio.
+    // Devuelve las casillas que se ven (chips) y las notas con su paso (en figuras desde el inicio).
+    // npc = notas por compás (4 en negras, 8 en corcheas)
+    function secuencia(d, npc) {
+        const chips = [], notas = [];
+        const poner = (pos, paso, clase) => {
+            const c = { texto: etiquetaGrado(pos, d.cat), clase: (clase || "") + (pos < 0 ? " abajo" : "") };
+            chips.push(c); notas.push({ pos, paso, chip: chips.length - 1 });
+        };
+        if (d.t === 0) {
+            // Escala: sube, baja y arpegio, todo seguido
+            const sube = [0,1,2,3,4,5,6,7], baja = [6,5,4,3,2,1,0];
+            const arp = d.cat.arpegio, arpVuelta = arp.slice(0, -1).reverse();
+            let paso = 0;
+            sube.concat(baja).forEach(p => poner(p, paso++));
+            arp.concat(arpVuelta, [0]).forEach(p => poner(p, paso++, "arp"));
+            return { chips, notas };
+        }
+        // Terceras: grupos subiendo hasta la 9ª, remate en la 8ª; silencio hasta completar el compás;
+        // la bajada arranca en el tiempo 1, llega hasta la 7ª de abajo y remata en la tónica.
+        const conj = d.t === 1;
+        const subida = [], bajada = [];
+        for (let g = 0; g <= 6; g++) subida.push(conj ? [g, g + 1, g + 2] : [g, g + 2]);
+        subida.push([7]);
+        for (let g = 7; g >= 1; g--) bajada.push(conj ? [g, g - 1, g - 2] : [g, g - 2]);
+        bajada.push([0]);
+        let paso = 0;
+        subida.forEach(gr => gr.forEach((p, k) => poner(p, paso++, k === gr.length - 1 ? "fin-grupo" : "")));
+        if (paso % npc !== 0) {
+            chips.push({ texto: "silencio", clase: "silencio fin-grupo" });
+            paso = Math.ceil(paso / npc) * npc;
+        }
+        bajada.forEach(gr => gr.forEach((p, k) => poner(p, paso++, k === gr.length - 1 ? "fin-grupo" : "")));
+        return { chips, notas };
+    }
+
+    // =========================================================
+    //  SONIDO
+    // =========================================================
+    let ctx = null;
+    const muestras = {};    // nota MIDI -> sonido listo
+    let datosSonido = null;
+    let reproduccion = null; // lo que está sonando ahora
+
+    // ---- iPhone: que suene aunque el botón lateral esté en silencio ----
+    // 1) iOS 17+: se declara la página como reproducción de música
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+    // 2) iPhones más viejos: un sonido silencioso en bucle pone al iPhone en "modo música"
+    const SILENCIO = "data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+    let audioMudo = null;
+    function activarModoMusica() {
+        try {
+            if (!audioMudo) {
+                audioMudo = document.createElement('audio');
+                audioMudo.src = SILENCIO;
+                audioMudo.loop = true;
+                audioMudo.setAttribute('playsinline', '');
+                audioMudo.volume = 0;
+            }
+            const pr = audioMudo.play();
+            if (pr && pr.catch) pr.catch(() => {});
+        } catch (e) {}
+    }
+    function desactivarModoMusica() {
+        try { if (audioMudo) audioMudo.pause(); } catch (e) {}
+    }
+
+    // Compresor + refuerzo: el ejemplo suena más fuerte sin distorsionar en el parlante del celular
+    const cadenas = new WeakMap();
+    function cadenaVolumen(c) {
+        if (cadenas.has(c)) return cadenas.get(c);
+        const comp = c.createDynamicsCompressor();
+        comp.threshold.value = -20;
+        comp.knee.value = 6;
+        comp.ratio.value = 4;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.2;
+        const refuerzo = c.createGain();
+        refuerzo.gain.value = 2.0;
+        const limite = c.createDynamicsCompressor();   // tope final para que nunca recorte
+        limite.threshold.value = -4;
+        limite.knee.value = 0;
+        limite.ratio.value = 20;
+        limite.attack.value = 0;
+        limite.release.value = 0.1;
+        comp.connect(refuerzo); refuerzo.connect(limite); limite.connect(c.destination);
+        cadenas.set(c, comp);
+        return comp;
+    }
+
+    function obtenerCtx() {
+        activarModoMusica();
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+    }
+
+    function base64ABuffer(dataUrl) {
+        const b64 = dataUrl.split(",")[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+        return bytes.buffer;
+    }
+
+    function decodificar(c, arrayBuffer) {
+        return new Promise((ok, mal) => c.decodeAudioData(arrayBuffer, ok, mal));
+    }
+
+    async function prepararMuestras() {
+        const c = obtenerCtx();
+        const notas = Object.keys(datosSonido);
+        for (const n of notas) {
+            if (!muestras[n]) muestras[n] = await decodificar(c, base64ABuffer(datosSonido[n]));
+        }
+    }
+
+    // Descarga el sonido de trombón al abrir la página
+    fetch("../sonidos/trombon.json")
+        .then(r => r.json())
+        .then(d => {
+            datosSonido = d;
+            document.getElementById('btnEjemplo').disabled = false;
+            document.getElementById('btnMetronomo').disabled = false;
+            document.getElementById('btnEjemplo').innerText = "▶ ESCUCHAR EJEMPLO";
+        })
+        .catch(() => {
+            document.getElementById('btnEjemplo').innerText = "SIN SONIDO";
+            document.getElementById('aviso').innerText = "No se pudo cargar el sonido. Revisa tu internet y recarga la página.";
+            document.getElementById('btnMetronomo').disabled = false;
+        });
+
+    // Metrónomo con sonido de cencerro (dos tonos metálicos filtrados, como el cowbell clásico).
+    // El tiempo 1 suena más agudo y un poco más fuerte.
+    function clic(c, destino, cuando, fuerte) {
+        const subir = fuerte ? 1.26 : 1;              // tiempo 1: una tercera mayor más arriba
+        const filtro = c.createBiquadFilter();
+        filtro.type = "bandpass";
+        filtro.frequency.value = 2640 * subir;
+        filtro.Q.value = 1.2;
+        const g = c.createGain();
+        const pico = fuerte ? 0.6 : 0.45;
+        g.gain.setValueAtTime(0.0001, cuando);
+        g.gain.exponentialRampToValueAtTime(pico, cuando + 0.002);
+        g.gain.exponentialRampToValueAtTime(pico * 0.3, cuando + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.3);
+        [587, 845].forEach(f => {
+            const osc = c.createOscillator();
+            osc.type = "square";
+            osc.frequency.value = f * subir;
+            osc.connect(filtro);
+            osc.start(cuando); osc.stop(cuando + 0.32);
+        });
+        filtro.connect(g); g.connect(destino);
+    }
+
+    function nota(c, destino, midi, cuando, duracion) {
+        const buf = muestras[midi];
+        if (!buf) return;
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        src.playbackRate.value = LA / 440;
+        const g = c.createGain();
+        const fin = cuando + duracion;
+        g.gain.setValueAtTime(0.9, cuando);
+        g.gain.setValueAtTime(0.9, Math.max(cuando, fin - 0.06));
+        g.gain.linearRampToValueAtTime(0.0001, fin);
+        src.connect(g); g.connect(destino);
+        src.start(cuando);
+        src.stop(fin + 0.05);
+    }
+
+    function tonicaReal(notaEscrita) {
+        const instr = INSTRUMENTOS.find(x => x.id === instrumento) || INSTRUMENTOS[0];
+        const clase = ((notaEscrita - instr.baja) % 12 + 12) % 12;
+        let t = TONICA_MAS_GRAVE;
+        while (t % 12 !== clase) t++;
+        return t;
+    }
+
+    // conEscala = false -> solo metrónomo (suena hasta que lo detengan)
+    async function tocar(conEscala) {
+        detener();
+        const c = obtenerCtx();
+        if (conEscala) {
+            document.getElementById('btnEjemplo').innerText = "PREPARANDO…";
+            try { await prepararMuestras(); } catch (e) {}
+        }
+        const d = datosEscala(vista);
+        const pulso = 60 / d.nivel.bpm;
+        const paso = pulso / d.nivel.figura;     // duración de cada nota
+        const salida = c.createGain();
+        salida.connect(cadenaVolumen(c));
+        const inicio = c.currentTime + 0.15;
+        const entrada = 4 * pulso;               // 1 compás de entrada
+
+        let totalPulsos;
+        const eventosNota = []; // [tiempo, índice de casilla]
+
+        if (conEscala) {
+            const npc = 4 * d.nivel.figura;
+            const sec = secuencia(d, npc);
+            const tonica = tonicaReal(d.notaEscrita);
+            const ultimoPaso = sec.notas[sec.notas.length - 1].paso;
+            const compases = Math.ceil((ultimoPaso + 1) / npc);
+            totalPulsos = 4 + compases * 4;
+            const finCompas = inicio + entrada + compases * 4 * pulso;
+            sec.notas.forEach((n, k) => {
+                const t = inicio + entrada + n.paso * paso;
+                const esUltima = k === sec.notas.length - 1;
+                const dur = esUltima ? (finCompas - t) * 0.95 : paso * 0.92;
+                nota(c, salida, tonica + semitonos(n.pos, d.cat), t, dur);
+                eventosNota.push([t, n.chip]);
+            });
+        } else {
+            totalPulsos = Infinity;
+        }
+
+        reproduccion = {
+            salida, inicio, pulso, totalPulsos, eventosNota, conEscala,
+            fin: inicio + totalPulsos * pulso
+        };
+
+        if (conEscala) {
+            for (let p = 0; p < totalPulsos; p++) clic(c, salida, inicio + p * pulso, p % 4 === 0);
+        } else {
+            // Metrónomo sin fin: programa los clics un poco por adelantado, una y otra vez
+            const r = reproduccion;
+            r.siguiente = 0;
+            const programar = () => {
+                while (inicio + r.siguiente * pulso < c.currentTime + 1.5) {
+                    clic(c, salida, inicio + r.siguiente * pulso, r.siguiente % 4 === 0);
+                    r.siguiente++;
+                }
+            };
+            programar();
+            r.timer = setInterval(programar, 200);
+        }
+        mantenerPantalla(true);
+        document.getElementById('btnEjemplo').innerText = conEscala ? "■ DETENER" : "▶ ESCUCHAR EJEMPLO";
+        document.getElementById('btnMetronomo').innerText = conEscala ? "SOLO METRÓNOMO" : "■ DETENER METRÓNOMO";
+        requestAnimationFrame(animar);
+    }
+
+    // Evita que el celular apague la pantalla (y el sonido) mientras suena
+    let candado = null;
+    async function mantenerPantalla(si) {
+        try {
+            if (si && !candado && navigator.wakeLock) candado = await navigator.wakeLock.request('screen');
+            if (!si && candado) { await candado.release(); candado = null; }
+        } catch (e) { candado = null; }
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && reproduccion) { candado = null; mantenerPantalla(true); }
+    });
+
+    function detener() {
+        if (reproduccion && reproduccion.timer) clearInterval(reproduccion.timer);
+        mantenerPantalla(false);
+        desactivarModoMusica();
+        if (reproduccion) {
+            try {
+                reproduccion.salida.gain.setValueAtTime(reproduccion.salida.gain.value, ctx.currentTime);
+                reproduccion.salida.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.03);
+                const s = reproduccion.salida;
+                setTimeout(() => s.disconnect(), 100);
+            } catch (e) {}
+        }
+        reproduccion = null;
+        document.querySelectorAll('#pulsos span').forEach(s => s.className = "");
+        document.querySelectorAll('#notas span').forEach(s => s.classList.remove('on'));
+        document.getElementById('cuenta').innerText = "";
+        const be = document.getElementById('btnEjemplo');
+        if (datosSonido) be.innerText = "▶ ESCUCHAR EJEMPLO";
+        document.getElementById('btnMetronomo').innerText = "SOLO METRÓNOMO";
+    }
+
+    function animar() {
+        const r = reproduccion;
+        if (!r) return;
+        const ahora = ctx.currentTime;
+        if (ahora >= r.fin) { detener(); return; }
+
+        const p = Math.floor((ahora - r.inicio) / r.pulso);
+        const dentro = (ahora - r.inicio) / r.pulso - p;
+        document.querySelectorAll('#pulsos span').forEach((s, k) => {
+            const on = p >= 0 && k === p % 4 && dentro < 0.35;
+            s.className = on ? ("on" + (k === 0 ? " fuerte" : "")) : "";
+        });
+        document.getElementById('cuenta').innerText = (p >= 0 && p < 4) ? ("Entrada: " + (p + 1)) : "";
+
+        if (r.conEscala) {
+            let actual = -1;
+            for (const [t, k] of r.eventosNota) { if (ahora >= t) actual = k; }
+            document.querySelectorAll('#notas span').forEach((s, k) => s.classList.toggle('on', k === actual));
+        }
+        requestAnimationFrame(animar);
+    }
+
+    document.getElementById('btnEjemplo').onclick = () => {
+        if (reproduccion && reproduccion.conEscala) { detener(); return; }
+        if (!instrumento) { abrirInstrumentos(); return; }
+        tocar(true);
+    };
+    document.getElementById('btnMetronomo').onclick = () => {
+        if (reproduccion && !reproduccion.conEscala) { detener(); return; }
+        tocar(false);
+    };
+
+    // =========================================================
+    //  PANTALLA
+    // =========================================================
+    function mostrar() {
+        const d = datosEscala(vista);
+        document.getElementById('etiquetaCat').innerText = d.cat.nombre;
+        document.getElementById('nivel').innerText = d.nivel.nombre;
+        document.getElementById('nombreEscala').innerText = d.nombre + " " + d.cat.corto;
+        document.getElementById('tipoEj').innerText = d.tipo.nombre.toUpperCase();
+        document.getElementById('tipo').innerText = d.tipo.desc;
+        document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LO HICISTE" : "";
+
+        const sec = secuencia(d, 4 * d.nivel.figura);
+        const cont = document.getElementById('notas');
+        cont.innerHTML = "";
+        sec.chips.forEach(ch => {
+            const s = document.createElement('span'); s.className = ch.clase.trim(); s.innerText = ch.texto; cont.appendChild(s);
+        });
+
+        const btnH = document.getElementById('btnHecha');
+        btnH.style.display = (!hechas[vista] && disponible(vista)) ? "block" : "none";
+        document.getElementById('btnReiniciar').style.display = cuantas(hechas) >= TOTAL ? "block" : "none";
+
+        const n = cuantas(hechas);
+        document.getElementById('txtProgreso').innerText = (vuelta > 1 ? "Vuelta " + vuelta + " · " : "") + n + " de " + TOTAL + " ejercicios";
+        document.getElementById('txtPorcentaje').innerText = Math.floor(n * 100 / TOTAL) + "%";
+        document.getElementById('barra').style.width = (n * 100 / TOTAL) + "%";
+
+        dibujarMapa();
+    }
+
+    const abiertos = new Set();   // velocidades que el estudiante dejó abiertas en "Mi ruta"
+    function dibujarMapa() {
+        const mapa = document.getElementById('mapa');
+        mapa.innerHTML = "";
+        const nivelVista = Math.floor(vista / POR_NIVEL);
+        NIVELES.forEach((nv, a) => {
+            const bloque = document.createElement('details'); bloque.className = "bloque";
+            if (a === nivelVista || abiertos.has(a)) bloque.open = true;
+            bloque.addEventListener('toggle', () => { if (bloque.open) abiertos.add(a); else abiertos.delete(a); });
+            let hechosNivel = 0;
+            for (let k = a * POR_NIVEL; k < (a + 1) * POR_NIVEL; k++) if (hechas[k]) hechosNivel++;
+            const h = document.createElement('summary');
+            h.innerHTML = "<span>" + (a + 1) + ". " + nv.nombre + "</span><span class='cuenta-nivel'>" + hechosNivel + " / " + POR_NIVEL + "</span>";
+            bloque.appendChild(h);
+            CATEGORIAS.forEach((cat, b) => {
+                const f = document.createElement('div'); f.className = "fila-cat"; f.innerText = cat.nombre.toUpperCase(); bloque.appendChild(f);
+                TIPOS.forEach((tp, t) => {
+                    const ft = document.createElement('div'); ft.className = "fila-tipo"; ft.innerText = tp.nombre.toUpperCase(); bloque.appendChild(ft);
+                    const g = document.createElement('div'); g.className = "casillas";
+                    cat.orden.forEach((o, k) => {
+                        const i = a * POR_NIVEL + b * 36 + t * 12 + k;
+                        const bt = document.createElement('button');
+                        bt.innerText = o[1];
+                        const abierta = disponible(i);
+                        if (hechas[i]) bt.classList.add('hecha');
+                        else if (abierta) bt.classList.add('actual');
+                        if (i === vista) bt.classList.add('vista');
+                        if (hechas[i] || abierta) {
+                            bt.onclick = () => { detener(); vista = i; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+                        }
+                        g.appendChild(bt);
+                    });
+                    bloque.appendChild(g);
+                });
+            });
+            mapa.appendChild(bloque);
+        });
+    }
+
+    document.getElementById('btnHecha').onclick = () => {
+        detener();
+        const d = datosEscala(vista);
+        const a = Math.floor(vista / POR_NIVEL);
+        const mayoresAntes = mayoresCompletas(a);
+        hechas[vista] = true;
+        localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+        guardarEnHoja();
+
+        let titulo = "¡Bien hecho!";
+        let texto = nombreEjercicio(d) + " (" + d.nivel.nombre + ") listo.";
+        if (cuantas(hechas) >= TOTAL) {
+            titulo = "¡ESCALANDO COMPLETO!";
+            texto = "Terminaste los 648 ejercicios. ¡Felicitaciones! Cuando quieras, puedes volver a empezar desde el comienzo.";
+        } else if (nivelCompleto(a)) {
+            titulo = "¡Velocidad completa!";
+            texto = "Terminaste los 108 ejercicios en " + d.nivel.nombre + "." + (a < NIVELES.length - 1 ? " Se abrieron las mayores en " + NIVELES[a + 1].nombre + "." : "");
+        } else if (!mayoresAntes && mayoresCompletas(a)) {
+            titulo = "¡Mayores completas!";
+            texto = "Se abrieron las menores naturales y armónicas (escalas y terceras) en " + d.nivel.nombre + ". Hazlas en el orden que quieras.";
+        }
+        vista = siguiente();
+        document.getElementById('logroTitulo').innerText = titulo;
+        document.getElementById('logroTexto').innerText = texto;
+        document.getElementById('ventanaLogro').classList.add('visible');
+        mostrar();
+    };
+    document.getElementById('btnCerrarLogro').onclick = () => {
+        document.getElementById('ventanaLogro').classList.remove('visible');
+    };
+
+    // =========================================================
+    //  INSTRUMENTO
+    // =========================================================
+    function abrirInstrumentos() {
+        const cont = document.getElementById('opcionesInstrumento');
+        cont.innerHTML = "";
+        INSTRUMENTOS.forEach(x => {
+            const b = document.createElement('button');
+            b.className = "opcion" + (x.id === instrumento ? " elegida" : "");
+            b.innerHTML = "<b>" + x.nombre + "</b><small>" + x.ejemplos + "</small>";
+            b.onclick = () => {
+                instrumento = x.id;
+                localStorage.setItem(CLAVE_INSTR, instrumento);
+                guardarEnHoja();
+                document.getElementById('ventanaInstrumento').classList.remove('visible');
+                mostrar();
+            };
+            cont.appendChild(b);
+        });
+        document.getElementById('ventanaInstrumento').classList.add('visible');
+    }
+    document.getElementById('btnInstrumento').onclick = () => { detener(); abrirInstrumentos(); };
+
+    // =========================================================
+    //  GUARDAR EN GOOGLE SHEETS
+    //  (necesita las funciones "progreso" y "guardarProgreso" en Apps Script;
+    //   mientras no existan, el avance queda guardado en el celular)
+    // =========================================================
+    // Texto que ve el profesor en la hoja: velocidad actual y cuántas lleva de ella
+    function resumen() {
+        if (cuantas(hechas) >= TOTAL) return { nivel: "TERMINÓ", escala: "Ruta completa" };
+        let a = 0; while (a < NIVELES.length - 1 && nivelCompleto(a)) a++;
+        if (!mayoresCompletas(a)) {
+            const d = datosEscala(siguiente());
+            return { nivel: NIVELES[a].nombre, escala: d.nombre + " mayor · " + d.tipo.nombre };
+        }
+        let n = 0; for (let k = a * POR_NIVEL + 36; k < (a + 1) * POR_NIVEL; k++) if (hechas[k]) n++;
+        return { nivel: NIVELES[a].nombre, escala: "Menores " + n + " de 72" };
+    }
+
+    function guardarEnHoja() {
+        const r = resumen();
+        fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "guardarProgreso", formato: TOTAL, usuario, vuelta, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
+        }).then(() => cargarRanking()).catch(() => {});
+    }
+
+    function cargarDeHoja() {
+        fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "progreso", formato: TOTAL, usuario })
+        })
+        .then(r => r.json())
+        .then(resp => {
+            if (resp.result !== "success") return;
+            const remota = aLista(resp.hechas, resp.progreso);
+            const vh = parseInt(resp.vuelta, 10) || 1;
+            let cambio;
+            if (vh > vuelta) {   // reinició en otro celular
+                vuelta = vh; localStorage.setItem(CLAVE_VUELTA, vuelta);
+                hechas = remota; cambio = true;
+            } else if (vh < vuelta) {
+                // la hoja no se enteró del reinicio (p. ej. sin internet): se le vuelve a avisar
+                avisarReinicio().then(() => guardarEnHoja());
+                return;
+            } else {
+                cambio = unir(remota);
+            }
+            const faltanEnHoja = hechas.some((x, k) => x && !remota[k]);
+            localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+            if (faltanEnHoja) guardarEnHoja();
+            let cambioInstr = false;
+            if (resp.instrumento && !instrumento) {
+                instrumento = resp.instrumento; localStorage.setItem(CLAVE_INSTR, instrumento); cambioInstr = true;
+            }
+            if (cambio) vista = siguiente();
+            if (cambio || cambioInstr) mostrar();
+        })
+        .catch(() => {});
+    }
+
+    // =========================================================
+    //  VOLVER A EMPEZAR (cuando terminan los 648)
+    // =========================================================
+    function avisarReinicio() {
+        return fetch(URL_SCRIPT, {
+            method: "POST",
+            body: JSON.stringify({ action: "reiniciar", usuario, vuelta })
+        }).catch(() => {});
+    }
+    document.getElementById('btnReiniciar').onclick = () => {
+        detener();
+        document.getElementById('ventanaReinicio').classList.add('visible');
+    };
+    document.getElementById('btnNoReiniciar').onclick = () => {
+        document.getElementById('ventanaReinicio').classList.remove('visible');
+    };
+    document.getElementById('btnSiReiniciar').onclick = () => {
+        vuelta = vuelta + 1;
+        hechas = new Array(TOTAL).fill(false);
+        localStorage.setItem(CLAVE_VUELTA, vuelta);
+        localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
+        localStorage.removeItem(CLAVE_PROGRESO);
+        avisarReinicio().then(() => cargarRanking());
+        vista = siguiente();
+        document.getElementById('ventanaReinicio').classList.remove('visible');
+        mostrar();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    // =========================================================
+    //  RANKING DEL DÍA (se reinicia a medianoche)
+    // =========================================================
+    let rankDatos = [];
+    let rankTodos = false;
+
+    function cargarRanking() {
+        fetch(URL_SCRIPT, { method: "POST", body: JSON.stringify({ action: "ranking", usuario }) })
+            .then(r => r.json())
+            .then(resp => {
+                if (resp.result !== "success") throw 0;
+                // cuentas que no compiten en el ranking (se comparan sin mayúsculas ni tildes)
+                const NO_COMPITEN = ["invitado"];
+                const simple = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+                rankDatos = (resp.lista || []).filter(x => !NO_COMPITEN.includes(simple(x.nombre)));
+                const [a, m, d] = String(resp.dia).split("-").map(Number);
+                const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+                document.getElementById('rankSub').innerText =
+                    "Hoy, " + d + " de " + meses[m - 1] + " · se reinicia a medianoche";
+                dibujarRanking();
+            })
+            .catch(() => { document.getElementById('rankSub').innerText = "No se pudo cargar el ranking."; });
+    }
+
+    function filaRanking(p, x) {
+        const div = document.createElement('div');
+        div.className = "rk" + (x.yo ? " yo" : "") + (x.hoy === 0 ? " cero" : "");
+        const medallas = ["🥇", "🥈", "🥉"];
+        const pos = document.createElement('span');
+        pos.className = "pos" + (p < 3 && x.hoy > 0 ? " medalla" : "");
+        pos.innerText = (p < 3 && x.hoy > 0) ? medallas[p] : (p + 1);
+        const nom = document.createElement('span');
+        nom.className = "nom"; nom.innerText = x.nombre + (x.yo ? " (tú)" : "");
+        const num = document.createElement('span');
+        num.className = "num";
+        num.innerHTML = x.hoy + " <small>" + (x.hoy === 1 ? "ejercicio" : "ejercicios") + "</small>";
+        div.append(pos, nom, num);
+        return div;
+    }
+
+    function dibujarRanking() {
+        const cont = document.getElementById('rankLista');
+        const btn = document.getElementById('btnVerTodos');
+        cont.innerHTML = "";
+        const activos = rankDatos.filter(x => x.hoy > 0);
+        const miPos = rankDatos.findIndex(x => x.yo);
+
+        if (activos.length === 0) {
+            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado ejercicios hoy.<br>¡Sé el primero!</div>';
+            btn.style.display = "none";
+            return;
+        }
+        const limite = rankTodos ? rankDatos.length : 10;
+        const mostrar = (rankTodos ? rankDatos : activos).slice(0, limite);
+        mostrar.forEach((x, p) => cont.appendChild(filaRanking(p, x)));
+        if (!rankTodos && miPos >= mostrar.length) {
+            const sep = document.createElement('div'); sep.className = "rk-sep"; sep.innerText = "· · ·";
+            cont.appendChild(sep);
+            cont.appendChild(filaRanking(miPos, rankDatos[miPos]));
+        }
+        btn.style.display = rankDatos.length > mostrar.length || rankTodos ? "block" : "none";
+        btn.innerText = rankTodos ? "VER MENOS" : "VER TODOS";
+    }
+    document.getElementById('btnVerTodos').onclick = () => { rankTodos = !rankTodos; dibujarRanking(); };
+
+    // =========================================================
+    //  INICIO
+    // =========================================================
+    mostrar();
+    cargarDeHoja();
+    cargarRanking();
+    if (!instrumento) abrirInstrumentos();
+</script>
+</body>
+</html>
