@@ -1,32 +1,44 @@
-// RUTA216 v5.0 - SCRIPT DE CONEXIÓN COMPLETO
+// ESCALANDO (antes RUTA216) v6.0 - SCRIPT DE CONEXIÓN COMPLETO
 // Hoja "usuarios":
 //   A usuario | B contraseña | C nombre | D instrumento (C, Bb, Eb o F)
-//   E nivel | F escala | G escalas_hechas (0 a 216) | H detalle (lo llena la app)
+//   E nivel | F ejercicio actual | G ejercicios hechos (0 a 648) | H detalle (lo llena la app)
 //   I nombre completo | J instrumento real | K grado   (solo referencia)
-//   L última escala (fecha) | M día | N escalas ese día | O vuelta   (lo llena la app)
+//   L último ejercicio (fecha) | M día | N ejercicios ese día | O vuelta   (lo llena la app)
 // El ranking es diario: se reinicia a medianoche (hora de Colombia).
+//
+// 648 ejercicios = 6 velocidades x 3 familias x 3 tipos (escala, terceras conjuntas,
+// terceras disjuntas) x 12 tonalidades.
+// El detalle viejo (216 = solo escalas) se convierte solo, sin perder nada.
+
+var TOTAL = 648;
+var ZONA = "America/Bogota";
+
+// Usuarios que no aparecen en el ranking (escritos en minúscula, sin tildes ni espacios)
+var NO_COMPITEN = ["paisa", "invitado"];
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
-
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("usuarios");
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
     var rows = sheet.getDataRange().getValues();
+    // la página nueva avisa que maneja 648; la vieja no dice nada y recibe el formato de 216
+    var nuevo = Number(data.formato) === TOTAL;
 
     // ACCIÓN: LOGIN
     if (action === "login") {
       for (var i = 1; i < rows.length; i++) {
         if (igual(rows[i][0], data.usuario) && igual(rows[i][1], data.contrasena)) {
+          var l = aLista(rows[i][7], rows[i][6]);
           return res({
             result: "success",
             usuario: String(rows[i][0]),
             nombre_real: rows[i][2],
             instrumento: afinacion(rows[i][3]),
-            progreso: Number(rows[i][6]) || 0,
-            hechas: String(rows[i][7] || ""),
+            progreso: contar(l),
+            hechas: nuevo ? aTexto(l) : aTextoViejo(l),
             vuelta: Number(rows[i][14]) || 1
           });
         }
@@ -38,11 +50,12 @@ function doPost(e) {
     if (action === "progreso") {
       for (var i = 1; i < rows.length; i++) {
         if (igual(rows[i][0], data.usuario)) {
+          var l = aLista(rows[i][7], rows[i][6]);
           return res({
             result: "success",
             instrumento: afinacion(rows[i][3]),
-            progreso: Number(rows[i][6]) || 0,
-            hechas: String(rows[i][7] || ""),
+            progreso: contar(l),
+            hechas: nuevo ? aTexto(l) : aTextoViejo(l),
             vuelta: Number(rows[i][14]) || 1
           });
         }
@@ -50,30 +63,31 @@ function doPost(e) {
       return res({result: "error", message: "Usuario no encontrado"});
     }
 
-    // ACCIÓN: GUARDAR EL AVANCE (nunca borra escalas ya hechas)
+    // ACCIÓN: GUARDAR EL AVANCE (nunca borra ejercicios ya hechos)
     if (action === "guardarProgreso") {
       for (var i = 1; i < rows.length; i++) {
         if (igual(rows[i][0], data.usuario)) {
           var vueltaHoja = Number(rows[i][14]) || 1;
+          var enHoja = aLista(rows[i][7], rows[i][6]);
           // si el celular viene de una vuelta anterior, no se mezcla con la nueva
           if ((Number(data.vuelta) || 1) < vueltaHoja) {
-            return res({result: "success", progreso: Number(rows[i][6]) || 0, hechas: String(rows[i][7] || ""), vuelta: vueltaHoja});
+            return res({result: "success", progreso: contar(enHoja), hechas: nuevo ? aTexto(enHoja) : aTextoViejo(enHoja), vuelta: vueltaHoja});
           }
-          var enHoja = aLista(rows[i][7], rows[i][6]);
           var nuevas = aLista(data.hechas, data.progreso);
           var total = 0, recien = 0;
-          for (var k = 0; k < 216; k++) {
+          for (var k = 0; k < TOTAL; k++) {
             if (nuevas[k] && !enHoja[k]) { enHoja[k] = true; recien++; }
             if (enHoja[k]) total++;
           }
           if (data.instrumento) sheet.getRange(i + 1, 4).setValue(data.instrumento);
+          // la página vieja no conoce las terceras: no se le deja cambiar nivel/ejercicio
           sheet.getRange(i + 1, 5, 1, 4).setValues([[
-            data.nivel || "",
-            data.escala || "",
+            nuevo ? (data.nivel || "") : rows[i][4],
+            nuevo ? (data.escala || "") : rows[i][5],
             total,
             "'" + aTexto(enHoja)
           ]]);
-          // Ranking del día: cuenta las escalas nuevas de hoy
+          // Ranking del día: cuenta los ejercicios nuevos de hoy
           if (recien > 0) {
             var dia = hoy();
             var deHoy = String(rows[i][12] || "") === dia ? (Number(rows[i][13]) || 0) : 0;
@@ -83,13 +97,13 @@ function doPost(e) {
               deHoy + recien
             ]]);
           }
-          return res({result: "success", progreso: total, hechas: aTexto(enHoja)});
+          return res({result: "success", progreso: total, hechas: nuevo ? aTexto(enHoja) : aTextoViejo(enHoja)});
         }
       }
       return res({result: "error", message: "Usuario no encontrado"});
     }
 
-    // ACCIÓN: VOLVER A EMPEZAR (borra las 216 y suma una vuelta)
+    // ACCIÓN: VOLVER A EMPEZAR (borra todo y suma una vuelta)
     if (action === "reiniciar") {
       for (var i = 1; i < rows.length; i++) {
         if (igual(rows[i][0], data.usuario)) {
@@ -97,7 +111,7 @@ function doPost(e) {
           var nueva = Number(data.vuelta) || (actual + 1);
           // solo reinicia si es una vuelta nueva (si el aviso llega dos veces, no pasa nada)
           if (nueva > actual) {
-            sheet.getRange(i + 1, 5, 1, 4).setValues([["Negras a 80", "C mayor", 0, "'" + aTexto([])]]);
+            sheet.getRange(i + 1, 5, 1, 4).setValues([["Negras a 80", "C mayor · Escala", 0, "'" + aTexto([])]]);
             sheet.getRange(i + 1, 15).setValue(nueva);
             actual = nueva;
           }
@@ -113,7 +127,7 @@ function doPost(e) {
       var lista = [];
       for (var i = 1; i < rows.length; i++) {
         var usuario = String(rows[i][0] || "");
-        if (usuario === "" || NO_COMPITEN.indexOf(limpiar(usuario)) >= 0) continue;   // profesor e invitado no compiten
+        if (usuario === "" || NO_COMPITEN.indexOf(limpiar(usuario)) >= 0) continue;
         var n = String(rows[i][12] || "") === dia ? (Number(rows[i][13]) || 0) : 0;
         lista.push({
           nombre: String(rows[i][2] || usuario),
@@ -122,7 +136,7 @@ function doPost(e) {
           yo: igual(usuario, data.usuario)
         });
       }
-      // más escalas hoy primero; si empatan, el que lleva más en total
+      // más ejercicios hoy primero; si empatan, el que lleva más en total
       lista.sort(function (a, b) { return (b.hoy - a.hoy) || (b.total - a.total); });
       return res({result: "success", dia: dia, lista: lista});
     }
@@ -136,38 +150,62 @@ function doPost(e) {
   }
 }
 
-var ZONA = "America/Bogota";
-
-// Usuarios que no aparecen en el ranking (escritos en minúscula, sin tildes ni espacios)
-var NO_COMPITEN = ["paisa", "invitado"];
-
-// Fecha de hoy en Colombia (ej. "2026-11-04")
+// Fecha de hoy en Colombia (ej. "2026-11-09")
 function hoy() {
   return Utilities.formatDate(new Date(), ZONA, "yyyy-MM-dd");
 }
 
 // Compara sin importar mayúsculas, tildes ni espacios ("Isabel Sofía G" = "isabelsofiag")
 function limpiar(t) {
-  return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+  return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 }
 function igual(a, b) {
   return limpiar(a) !== "" && limpiar(a) === limpiar(b);
 }
 
-// Texto de 216 "0" y "1" -> lista. Si no hay texto, usa el número (formato viejo).
+// Posición de una escala del formato viejo (216) dentro del nuevo (648)
+//   viejo: velocidad*36 + familia*12 + tonalidad
+//   nuevo: velocidad*108 + familia*36 + tipo*12 + tonalidad   (tipo 0 = escala)
+function nuevoIndice(i) {
+  var velocidad = Math.floor(i / 36), familia = Math.floor((i % 36) / 12), tonalidad = i % 12;
+  return velocidad * 108 + familia * 36 + tonalidad;
+}
+
+// Texto de "0" y "1" -> lista de 648. Acepta el formato viejo (216) y lo convierte.
 function aLista(texto, numero) {
   var l = [];
+  for (var k = 0; k < TOTAL; k++) l.push(false);
   var t = String(texto || "");
-  var esTexto = /^[01]+$/.test(t);
-  var n = Math.min(Number(numero) || 0, 216);
-  for (var k = 0; k < 216; k++) l.push(esTexto ? t.charAt(k) === "1" : k < n);
+  if (/^[01]+$/.test(t)) {
+    if (t.length === 216) {
+      for (var i = 0; i < 216; i++) if (t.charAt(i) === "1") l[nuevoIndice(i)] = true;
+    } else {
+      for (var k = 0; k < TOTAL && k < t.length; k++) l[k] = t.charAt(k) === "1";
+    }
+  } else {
+    var n = Math.min(Number(numero) || 0, 216);   // formato muy viejo: solo un número
+    for (var i = 0; i < n; i++) l[nuevoIndice(i)] = true;
+  }
   return l;
 }
 
 function aTexto(l) {
   var t = "";
-  for (var k = 0; k < 216; k++) t += l[k] ? "1" : "0";
+  for (var k = 0; k < TOTAL; k++) t += l[k] ? "1" : "0";
   return t;
+}
+
+// Para la página vieja: solo las escalas, en su formato de 216
+function aTextoViejo(l) {
+  var t = "";
+  for (var i = 0; i < 216; i++) t += l[nuevoIndice(i)] ? "1" : "0";
+  return t;
+}
+
+function contar(l) {
+  var n = 0;
+  for (var k = 0; k < TOTAL; k++) if (l[k]) n++;
+  return n;
 }
 
 function res(obj) {
@@ -185,5 +223,5 @@ function afinacion(valor) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput("RUTA216 activo").setMimeType(ContentService.MimeType.TEXT);
+  return ContentService.createTextOutput("ESCALANDO activo").setMimeType(ContentService.MimeType.TEXT);
 }
