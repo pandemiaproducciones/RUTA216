@@ -329,17 +329,31 @@
     }
     localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
 
-    // ---- Reglas de desbloqueo ----
-    // En cada velocidad: las mayores van en orden estricto (escalas C, G, D… → terceras conjuntas → disjuntas).
-    // Al terminar las 36 de mayores se abren las 72 de menores (naturales y armónicas), en cualquier orden.
-    // Al completar los 108 ejercicios de una velocidad se abre la siguiente.
-    function nivelCompleto(a) { for (let k = a * POR_NIVEL; k < (a + 1) * POR_NIVEL; k++) if (!hechas[k]) return false; return true; }
-    function mayoresCompletas(a) { for (let k = a * POR_NIVEL; k < a * POR_NIVEL + 36; k++) if (!hechas[k]) return false; return true; }
+    // ---- Reglas de desbloqueo (dos caminos paralelos) ----
+    // MAYORES: en cada velocidad van en orden estricto (escalas C, G, D… → terceras conjuntas → disjuntas).
+    //          Al terminar las 36 mayores de una velocidad se abren las mayores de la siguiente.
+    // MENORES: las 72 menores (naturales y armónicas) de una velocidad se abren, en cualquier orden,
+    //          cuando están completas las mayores de esa velocidad Y las menores de la velocidad anterior.
+    function rangoCompleto(desde, hasta) { for (let k = desde; k < hasta; k++) if (!hechas[k]) return false; return true; }
+    function nivelCompleto(a) { return rangoCompleto(a * POR_NIVEL, (a + 1) * POR_NIVEL); }
+    function mayoresCompletas(a) { return rangoCompleto(a * POR_NIVEL, a * POR_NIVEL + 36); }
+    function menoresCompletas(a) { return rangoCompleto(a * POR_NIVEL + 36, (a + 1) * POR_NIVEL); }
+    function mayoresAbiertas(a) { return a === 0 || mayoresCompletas(a - 1); }
+    function menoresAbiertas(a) { return mayoresCompletas(a) && (a === 0 || menoresCompletas(a - 1)); }
     function disponible(i) {
         const a = Math.floor(i / POR_NIVEL), j = i % POR_NIVEL;
-        if (a > 0 && !nivelCompleto(a - 1)) return false;
-        if (j < 36) { for (let k = a * POR_NIVEL; k < i; k++) if (!hechas[k]) return false; return true; }
-        return mayoresCompletas(a);
+        if (j < 36) return mayoresAbiertas(a) && rangoCompleto(a * POR_NIVEL, i);
+        return menoresAbiertas(a);
+    }
+    // Después de marcar: sigue en el mismo camino (mayores con mayores, menores con menores)
+    function siguienteDesde(i) {
+        const a = Math.floor(i / POR_NIVEL), esMayor = (i % POR_NIVEL) < 36;
+        if (esMayor) {
+            for (let k = 0; k < TOTAL; k++) if (k % POR_NIVEL < 36 && !hechas[k] && disponible(k)) return k;
+        } else {
+            for (let k = a * POR_NIVEL + 36; k < (a + 1) * POR_NIVEL; k++) if (!hechas[k] && disponible(k)) return k;
+        }
+        return siguiente();
     }
     function siguiente() {
         for (let i = 0; i < TOTAL; i++) if (!hechas[i] && disponible(i)) return i;
@@ -762,23 +776,31 @@
         const d = datosEscala(vista);
         const a = Math.floor(vista / POR_NIVEL);
         const mayoresAntes = mayoresCompletas(a);
+        const menoresAntes = menoresCompletas(a);
         hechas[vista] = true;
         localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
         guardarEnHoja();
 
         let titulo = "¡Bien hecho!";
         let texto = nombreEjercicio(d) + " (" + d.nivel.nombre + ") listo.";
+        const sig = a < NIVELES.length - 1 ? NIVELES[a + 1].nombre : null;
         if (cuantas(hechas) >= TOTAL) {
             titulo = "¡ESCALANDO COMPLETO!";
             texto = "Terminaste los 648 ejercicios. ¡Felicitaciones! Cuando quieras, puedes volver a empezar desde el comienzo.";
-        } else if (nivelCompleto(a)) {
-            titulo = "¡Velocidad completa!";
-            texto = "Terminaste los 108 ejercicios en " + d.nivel.nombre + "." + (a < NIVELES.length - 1 ? " Se abrieron las mayores en " + NIVELES[a + 1].nombre + "." : "");
         } else if (!mayoresAntes && mayoresCompletas(a)) {
-            titulo = "¡Mayores completas!";
-            texto = "Se abrieron las menores naturales y armónicas (escalas y terceras) en " + d.nivel.nombre + ". Hazlas en el orden que quieras.";
+            titulo = "¡Mayores completas en " + d.nivel.nombre + "!";
+            const partes = [];
+            if (sig) partes.push("Se abrieron las mayores en " + sig + ".");
+            if (menoresAbiertas(a)) partes.push("Ya puedes hacer las menores de " + d.nivel.nombre + " en el orden que quieras.");
+            else partes.push("Las menores de " + d.nivel.nombre + " se abren cuando termines las menores de " + NIVELES[a - 1].nombre + ".");
+            texto = partes.join(" ");
+        } else if (!menoresAntes && menoresCompletas(a)) {
+            titulo = "¡Menores completas en " + d.nivel.nombre + "!";
+            if (!sig) texto = "Terminaste todas las menores.";
+            else if (menoresAbiertas(a + 1)) texto = "Se abrieron las menores en " + sig + ".";
+            else texto = "Las menores en " + sig + " se abren cuando termines las mayores de esa velocidad.";
         }
-        vista = siguiente();
+        vista = siguienteDesde(vista);
         document.getElementById('logroTitulo').innerText = titulo;
         document.getElementById('logroTexto').innerText = texto;
         document.getElementById('ventanaLogro').classList.add('visible');
@@ -817,15 +839,21 @@
     //   mientras no existan, el avance queda guardado en el celular)
     // =========================================================
     // Texto que ve el profesor en la hoja: velocidad actual y cuántas lleva de ella
+    // Texto que ve el profesor en la hoja: dónde va en mayores (columna E) y en menores (columna F)
     function resumen() {
         if (cuantas(hechas) >= TOTAL) return { nivel: "TERMINÓ", escala: "Ruta completa" };
-        let a = 0; while (a < NIVELES.length - 1 && nivelCompleto(a)) a++;
-        if (!mayoresCompletas(a)) {
-            const d = datosEscala(siguiente());
-            return { nivel: NIVELES[a].nombre, escala: d.nombre + " mayor · " + d.tipo.nombre };
+        let am = 0; while (am < NIVELES.length && mayoresCompletas(am)) am++;
+        let an = 0; while (an < NIVELES.length && menoresCompletas(an)) an++;
+        let may = "Mayores: completas";
+        if (am < NIVELES.length) {
+            for (let i = am * POR_NIVEL; i < am * POR_NIVEL + 36; i++) if (!hechas[i]) { const d = datosEscala(i); may = "Mayores " + NIVELES[am].nombre + ": " + d.nombre + " · " + d.tipo.nombre; break; }
         }
-        let n = 0; for (let k = a * POR_NIVEL + 36; k < (a + 1) * POR_NIVEL; k++) if (hechas[k]) n++;
-        return { nivel: NIVELES[a].nombre, escala: "Menores " + n + " de 72" };
+        let men = "Menores: completas";
+        if (an < NIVELES.length) {
+            let n = 0; for (let k = an * POR_NIVEL + 36; k < (an + 1) * POR_NIVEL; k++) if (hechas[k]) n++;
+            men = "Menores " + NIVELES[an].nombre + ": " + (menoresAbiertas(an) ? n + " de 72" : "cerradas");
+        }
+        return { nivel: may, escala: men };
     }
 
     function guardarEnHoja() {
