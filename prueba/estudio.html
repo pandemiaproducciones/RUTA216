@@ -331,14 +331,21 @@
 
     // ---- Reglas de desbloqueo (dos caminos paralelos) ----
     // MAYORES: en cada velocidad van en orden estricto (escalas C, G, D… → terceras conjuntas → disjuntas).
-    //          Al terminar las 36 mayores de una velocidad se abren las mayores de la siguiente.
+    //          Negras a 100 se abre con las mayores de 80. Desde Negras a 120: mayores anteriores + todas las menores hasta la velocidad anterior.
     // MENORES: las 72 menores (naturales y armónicas) de una velocidad se abren, en cualquier orden,
     //          cuando están completas las mayores de esa velocidad Y las menores de la velocidad anterior.
     function rangoCompleto(desde, hasta) { for (let k = desde; k < hasta; k++) if (!hechas[k]) return false; return true; }
     function nivelCompleto(a) { return rangoCompleto(a * POR_NIVEL, (a + 1) * POR_NIVEL); }
     function mayoresCompletas(a) { return rangoCompleto(a * POR_NIVEL, a * POR_NIVEL + 36); }
     function menoresCompletas(a) { return rangoCompleto(a * POR_NIVEL + 36, (a + 1) * POR_NIVEL); }
-    function mayoresAbiertas(a) { return a === 0 || mayoresCompletas(a - 1); }
+    // Mayores: la de Negras a 100 solo pide las mayores de 80. Desde Negras a 120 en adelante,
+    // además de las mayores anteriores, pide TODAS las menores hasta la velocidad anterior.
+    function mayoresAbiertas(a) {
+        if (a === 0) return true;
+        if (!mayoresCompletas(a - 1)) return false;
+        if (a >= 2) { for (let k = 0; k < a; k++) if (!menoresCompletas(k)) return false; }
+        return true;
+    }
     function menoresAbiertas(a) { return mayoresCompletas(a) && (a === 0 || menoresCompletas(a - 1)); }
     function disponible(i) {
         const a = Math.floor(i / POR_NIVEL), j = i % POR_NIVEL;
@@ -790,15 +797,20 @@
         } else if (!mayoresAntes && mayoresCompletas(a)) {
             titulo = "¡Mayores completas en " + d.nivel.nombre + "!";
             const partes = [];
-            if (sig) partes.push("Se abrieron las mayores en " + sig + ".");
+            if (sig) partes.push(mayoresAbiertas(a + 1) ? "Se abrieron las mayores en " + sig + "." : "Las mayores en " + sig + " se abren cuando termines las menores hasta " + d.nivel.nombre + ".");
             if (menoresAbiertas(a)) partes.push("Ya puedes hacer las menores de " + d.nivel.nombre + " en el orden que quieras.");
             else partes.push("Las menores de " + d.nivel.nombre + " se abren cuando termines las menores de " + NIVELES[a - 1].nombre + ".");
             texto = partes.join(" ");
         } else if (!menoresAntes && menoresCompletas(a)) {
             titulo = "¡Menores completas en " + d.nivel.nombre + "!";
             if (!sig) texto = "Terminaste todas las menores.";
-            else if (menoresAbiertas(a + 1)) texto = "Se abrieron las menores en " + sig + ".";
-            else texto = "Las menores en " + sig + " se abren cuando termines las mayores de esa velocidad.";
+            else {
+                const partes = [];
+                if (menoresAbiertas(a + 1)) partes.push("Se abrieron las menores en " + sig + ".");
+                else partes.push("Las menores en " + sig + " se abren cuando termines las mayores de esa velocidad.");
+                if (a >= 1 && mayoresAbiertas(a + 1) && !mayoresCompletas(a + 1)) partes.unshift("Se abrieron las mayores en " + sig + ".");
+                texto = partes.join(" ");
+            }
         }
         vista = siguienteDesde(vista);
         document.getElementById('logroTitulo').innerText = titulo;
