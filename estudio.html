@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RUTA216 · Estudio</title>
+    <title>RUTINA · Escalas</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -17,10 +17,11 @@
         .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
 
         /* Encabezado */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+        header .botones { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
         .marca { display: flex; align-items: center; gap: 10px; }
         .marca img { width: 44px; height: auto; display: block; }
-        header h1 { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
+        header h1 { font-size: 1.05rem; letter-spacing: 2px; margin: 0; }
         header .quien { font-size: 0.7rem; color: #888; letter-spacing: 1px; margin-top: 2px; }
         .btn-chico {
             background: none; border: 1px solid #444; color: #aaa; border-radius: 8px;
@@ -42,7 +43,8 @@
         .etiqueta { font-size: 0.7rem; color: #888; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
         .nivel { font-size: 1rem; font-weight: 700; margin: 6px 0 14px; color: #ffd166; }
         .nombre-escala { font-size: 2.2rem; font-weight: 700; margin: 4px 0 2px; line-height: 1.1; }
-        .tipo { font-size: 0.85rem; color: #bbb; margin-bottom: 18px; }
+        .tipo-ej { display: inline-block; margin: 8px 0 6px; padding: 5px 12px; border-radius: 20px; background: #ffd166; color: #000; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; }
+        .tipo { font-size: 0.8rem; color: #bbb; margin-bottom: 18px; }
         .repaso { font-size: 0.7rem; color: #ffd166; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
 
         .pulsos { display: flex; justify-content: center; gap: 12px; margin: 6px 0 14px; }
@@ -56,6 +58,9 @@
             font-size: 0.75rem; font-weight: 700; color: #888;
         }
         .notas span.arp { background: #23303a; }
+        .notas span.fin-grupo { margin-right: 6px; }
+        .notas span.abajo { box-shadow: inset 0 -3px 0 #666; }
+        .notas span.silencio { background: none; border: 1px dashed #ffd166; color: #ffd166; font-weight: 600; font-style: italic; padding: 5px 8px; }
         .notas span.on { background: #fff; color: #000; }
         .cuenta { font-size: 0.8rem; color: #ffd166; font-weight: 700; min-height: 1.1rem; margin-bottom: 8px; }
 
@@ -92,9 +97,15 @@
         /* Mapa de la ruta */
         .ruta { margin-top: 28px; }
         .ruta h2 { font-size: 0.8rem; letter-spacing: 2px; color: #888; margin: 0 0 12px; }
-        .bloque { margin-bottom: 16px; }
-        .bloque h3 { font-size: 0.8rem; margin: 0 0 8px; color: #ffd166; }
-        .fila-cat { font-size: 0.65rem; color: #888; letter-spacing: 1px; font-weight: 700; margin: 8px 0 5px; }
+        .bloque { margin-bottom: 10px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 0 12px; }
+        .bloque summary { list-style: none; cursor: pointer; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; color: #ffd166; }
+        .bloque summary::-webkit-details-marker { display: none; }
+        .bloque summary .cuenta-nivel { color: #888; font-weight: 600; font-size: 0.7rem; }
+        .bloque summary::after { content: "▾"; color: #888; margin-left: 8px; }
+        .bloque[open] summary::after { content: "▴"; }
+        .bloque[open] { padding-bottom: 12px; }
+        .fila-tipo { font-size: 0.6rem; color: #666; letter-spacing: 1px; font-weight: 700; margin: 6px 0 4px; }
+        .fila-cat { font-size: 0.65rem; color: #aaa; letter-spacing: 1px; font-weight: 700; margin: 12px 0 2px; }
         .casillas { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
         .casillas button {
             padding: 8px 0; border-radius: 6px; border: 1px solid #333; background: #1a1a1a;
@@ -130,18 +141,18 @@
         <div class="marca">
             <img src="logo.png" alt="PAISA">
             <div>
-                <h1>RUTA 216</h1>
+                <h1>ESCALAS</h1>
                 <div class="quien" id="quien"></div>
             </div>
         </div>
-        <div>
+        <div class="botones">
             <button class="btn-chico" id="btnInstrumento">INSTRUMENTO</button>
-            <button class="btn-chico" id="btnSalir">SALIR</button>
+            <button class="btn-chico" id="btnSalir">← MENÚ</button>
         </div>
     </header>
 
     <div class="progreso">
-        <div class="texto"><span id="txtProgreso">0 de 216</span><span id="txtPorcentaje">0%</span></div>
+        <div class="texto"><span id="txtProgreso">0 de 648</span><span id="txtPorcentaje">0%</span></div>
         <div class="barra"><div id="barra"></div></div>
     </div>
 
@@ -149,7 +160,8 @@
         <div class="repaso" id="repaso"></div>
         <div class="etiqueta" id="etiquetaCat">Escalas mayores</div>
         <div class="nivel" id="nivel">Negras a 80</div>
-        <div class="nombre-escala" id="nombreEscala">Do mayor</div>
+        <div class="nombre-escala" id="nombreEscala">C mayor</div>
+        <div class="tipo-ej" id="tipoEj">ESCALA</div>
         <div class="tipo" id="tipo">1 octava · subir, bajar y arpegio</div>
 
         <div class="cuenta" id="cuenta"></div>
@@ -189,7 +201,7 @@
 <div class="fondo" id="ventanaReinicio">
     <div class="ventana" style="text-align:center">
         <h2>¿Volver a empezar?</h2>
-        <p>Se borran las 216 escalas marcadas y arrancas otra vez desde C mayor en negras a 80. Tu instrumento se conserva.</p>
+        <p>Se borran los 648 ejercicios marcados y arrancas otra vez desde la escala de C mayor en negras a 80. Tu instrumento se conserva.</p>
         <button class="btn btn-blanco" id="btnSiReiniciar">SÍ, EMPEZAR DE NUEVO</button>
         <button class="btn btn-gris" id="btnNoReiniciar">CANCELAR</button>
     </div>
@@ -223,13 +235,13 @@
 
     // Las 3 familias, cada una con sus 12 tonalidades en el orden en que se estudian
     const CATEGORIAS = [
-        { nombre: "Escalas mayores", corto: "mayor",
+        { nombre: "Mayores", corto: "mayor",
           grados: [0,2,4,5,7,9,11,12], arpegio: [2,4,7],
           orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] },
-        { nombre: "Escalas menores eólicas", corto: "menor",
+        { nombre: "Menores naturales", corto: "menor",
           grados: [0,2,3,5,7,8,10,12], arpegio: [2,4,7],
           orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] },
-        { nombre: "Escalas menores armónicas", corto: "menor armónica",
+        { nombre: "Menores armónicas", corto: "menor armónica",
           grados: [0,2,3,5,7,8,11,12], arpegio: [2,4,6,7],
           orden: [[0,"C"],[7,"G"],[2,"D"],[9,"A"],[4,"E"],[11,"B"],[6,"F#"],[1,"C#"],[8,"Ab"],[3,"Eb"],[10,"Bb"],[5,"F"]] }
     ];
@@ -245,12 +257,21 @@
     ];
 
     // Registro del trombón: la tónica real del ejemplo cae entre Lab2 y Sol3
-    const TONICA_MAS_GRAVE = 44;
+    const TONICA_MAS_GRAVE = 44;   // (las terceras bajan hasta 2 semitonos más y suben hasta la 9ª)
 
     // Afinación del ejemplo: La = 442 Hz (los sonidos originales vienen en 440)
     const LA = 442;
 
-    const TOTAL = NIVELES.length * CATEGORIAS.length * 12; // 216
+    // Los 3 tipos de ejercicio de cada familia, en este orden
+    const TIPOS = [
+        { nombre: "Escala",             desc: "1 octava · subir, bajar y arpegio" },
+        { nombre: "Terceras conjuntas", desc: "Grupos de 3 notas · hasta la 9ª y bajando hasta la 7ª" },
+        { nombre: "Terceras disjuntas", desc: "Saltos de tercera · hasta la 9ª y bajando hasta la 7ª" }
+    ];
+
+    // Cada ejercicio tiene un número: velocidad*108 + familia*36 + tipo*12 + tonalidad
+    const POR_NIVEL = CATEGORIAS.length * TIPOS.length * 12;   // 108
+    const TOTAL = NIVELES.length * POR_NIVEL;                  // 648
 
     // =========================================================
     //  SESIÓN
@@ -263,17 +284,27 @@
     const nombreReal = (sesion && sesion.nombre_real) ? sesion.nombre_real : usuario;
     document.getElementById('quien').innerText = (nombreReal || "").toUpperCase();
 
-    const CLAVE_HECHAS = 'ruta216_hechas_' + usuario;      // 216 caracteres: "1" hecha, "0" pendiente
+    const CLAVE_HECHAS = 'ruta216_hechas_' + usuario;      // 648 caracteres: "1" hecho, "0" pendiente
     const CLAVE_PROGRESO = 'ruta216_progreso_' + usuario;  // formato viejo (solo un número)
     const CLAVE_INSTR = 'ruta216_instrumento_' + usuario;
     const CLAVE_VUELTA = 'ruta216_vuelta_' + usuario;       // cuántas veces ha reiniciado la ruta
 
-    // Convierte un número viejo (N escalas seguidas) o un texto de 0 y 1 en la lista de hechas
+    // Formato viejo (216 = solo escalas): posición de esa escala en el formato nuevo
+    function nuevoIndice(i) {
+        const a = Math.floor(i / 36), b = Math.floor((i % 36) / 12), k = i % 12;
+        return a * POR_NIVEL + b * 36 + k;
+    }
+    // Convierte un texto de 0 y 1 (nuevo o viejo) o un número viejo en la lista de hechos
     function aLista(texto, numero) {
         const l = new Array(TOTAL).fill(false);
         const t = String(texto || "");
-        if (/^[01]+$/.test(t)) { for (let k = 0; k < TOTAL && k < t.length; k++) l[k] = t[k] === "1"; }
-        else { const n = Math.min(parseInt(numero, 10) || 0, TOTAL); for (let k = 0; k < n; k++) l[k] = true; }
+        if (/^[01]+$/.test(t)) {
+            if (t.length === 216) { for (let i = 0; i < 216; i++) if (t[i] === "1") l[nuevoIndice(i)] = true; }
+            else { for (let k = 0; k < TOTAL && k < t.length; k++) l[k] = t[k] === "1"; }
+        } else {
+            const n = Math.min(parseInt(numero, 10) || 0, 216);
+            for (let i = 0; i < n; i++) l[nuevoIndice(i)] = true;
+        }
         return l;
     }
     const aTexto = l => l.map(x => x ? "1" : "0").join("");
@@ -298,16 +329,38 @@
     }
     localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
 
-    // ---- Reglas de desbloqueo ----
-    // En cada velocidad: las 12 mayores van en orden; al terminarlas se abren las 24 menores
-    // (eólicas y armónicas) en cualquier orden. Al completar las 36 se abre la siguiente velocidad.
-    function nivelCompleto(a) { for (let k = a * 36; k < a * 36 + 36; k++) if (!hechas[k]) return false; return true; }
-    function mayoresCompletas(a) { for (let k = a * 36; k < a * 36 + 12; k++) if (!hechas[k]) return false; return true; }
+    // ---- Reglas de desbloqueo (dos caminos paralelos) ----
+    // MAYORES: en cada velocidad van en orden estricto (escalas C, G, D… → terceras conjuntas → disjuntas).
+    //          Negras a 100 se abre con las mayores de 80. Desde Negras a 120: mayores anteriores + todas las menores hasta la velocidad anterior.
+    // MENORES: las 72 menores (naturales y armónicas) de una velocidad se abren, en cualquier orden,
+    //          cuando están completas las mayores de esa velocidad Y las menores de la velocidad anterior.
+    function rangoCompleto(desde, hasta) { for (let k = desde; k < hasta; k++) if (!hechas[k]) return false; return true; }
+    function nivelCompleto(a) { return rangoCompleto(a * POR_NIVEL, (a + 1) * POR_NIVEL); }
+    function mayoresCompletas(a) { return rangoCompleto(a * POR_NIVEL, a * POR_NIVEL + 36); }
+    function menoresCompletas(a) { return rangoCompleto(a * POR_NIVEL + 36, (a + 1) * POR_NIVEL); }
+    // Mayores: la de Negras a 100 solo pide las mayores de 80. Desde Negras a 120 en adelante,
+    // además de las mayores anteriores, pide TODAS las menores hasta la velocidad anterior.
+    function mayoresAbiertas(a) {
+        if (a === 0) return true;
+        if (!mayoresCompletas(a - 1)) return false;
+        if (a >= 2) { for (let k = 0; k < a; k++) if (!menoresCompletas(k)) return false; }
+        return true;
+    }
+    function menoresAbiertas(a) { return mayoresCompletas(a) && (a === 0 || menoresCompletas(a - 1)); }
     function disponible(i) {
-        const a = Math.floor(i / 36), j = i % 36;
-        if (a > 0 && !nivelCompleto(a - 1)) return false;
-        if (j < 12) { for (let k = a * 36; k < i; k++) if (!hechas[k]) return false; return true; }
-        return mayoresCompletas(a);
+        const a = Math.floor(i / POR_NIVEL), j = i % POR_NIVEL;
+        if (j < 36) return mayoresAbiertas(a) && rangoCompleto(a * POR_NIVEL, i);
+        return menoresAbiertas(a);
+    }
+    // Después de marcar: sigue en el mismo camino (mayores con mayores, menores con menores)
+    function siguienteDesde(i) {
+        const a = Math.floor(i / POR_NIVEL), esMayor = (i % POR_NIVEL) < 36;
+        if (esMayor) {
+            for (let k = 0; k < TOTAL; k++) if (k % POR_NIVEL < 36 && !hechas[k] && disponible(k)) return k;
+        } else {
+            for (let k = a * POR_NIVEL + 36; k < (a + 1) * POR_NIVEL; k++) if (!hechas[k] && disponible(k)) return k;
+        }
+        return siguiente();
     }
     function siguiente() {
         for (let i = 0; i < TOTAL; i++) if (!hechas[i] && disponible(i)) return i;
@@ -317,33 +370,68 @@
 
     document.getElementById('btnSalir').onclick = () => {
         detener();
-        localStorage.removeItem('session_ruta216');
-        window.location.href = "index.html";
+        window.location.href = "menu.html";
     };
 
     // =========================================================
     //  DATOS DE CADA ESCALA
     // =========================================================
     function datosEscala(i) {
-        const nivel = NIVELES[Math.floor(i / 36)];
-        const cat = CATEGORIAS[Math.floor((i % 36) / 12)];
+        const nivel = NIVELES[Math.floor(i / POR_NIVEL)];
+        const j = i % POR_NIVEL;
+        const cat = CATEGORIAS[Math.floor(j / 36)];
+        const t = Math.floor((j % 36) / 12);
         const [notaEscrita, nombre] = cat.orden[i % 12];
-        return { i, nivel, cat, notaEscrita, nombre };
+        return { i, nivel, cat, t, tipo: TIPOS[t], notaEscrita, nombre };
     }
+    function nombreEjercicio(d) { return d.nombre + " " + d.cat.corto + " · " + d.tipo.nombre; }
 
-    // Lista de grados que se tocan: sube, baja y arpegio (empezando desde la tónica de abajo)
-    function secuenciaGrados(cat) {
-        const sube = [0,1,2,3,4,5,6,7];
-        const baja = [6,5,4,3,2,1,0];
-        const arp = cat.arpegio;                       // ej. [2,4,7]
-        const arpVuelta = arp.slice(0, -1).reverse();  // ej. [4,2]
-        return { escala: sube.concat(baja), arpegio: arp.concat(arpVuelta, [0]) };
+    // Semitonos desde la tónica para un grado (0 = tónica, 7 = octava, 8 = novena, -1 = séptima de abajo)
+    function semitonos(pos, cat) {
+        return 12 * Math.floor(pos / 7) + cat.grados[((pos % 7) + 7) % 7];
     }
-
     function etiquetaGrado(pos, cat) {
         if (pos === 7) return "8";
-        if (cat.corto === "menor armónica" && pos === 6) return "7↑";
+        if (pos === 8) return "9";
+        const arm = cat.corto === "menor armónica";
+        if (pos === 6 || pos === -1) return arm ? "7↑" : "7";
         return String(pos + 1);
+    }
+
+    // Qué se toca en cada ejercicio.
+    // Devuelve las casillas que se ven (chips) y las notas con su paso (en figuras desde el inicio).
+    // npc = notas por compás (4 en negras, 8 en corcheas)
+    function secuencia(d, npc) {
+        const chips = [], notas = [];
+        const poner = (pos, paso, clase) => {
+            const c = { texto: etiquetaGrado(pos, d.cat), clase: (clase || "") + (pos < 0 ? " abajo" : "") };
+            chips.push(c); notas.push({ pos, paso, chip: chips.length - 1 });
+        };
+        if (d.t === 0) {
+            // Escala: sube, baja y arpegio, todo seguido
+            const sube = [0,1,2,3,4,5,6,7], baja = [6,5,4,3,2,1,0];
+            const arp = d.cat.arpegio, arpVuelta = arp.slice(0, -1).reverse();
+            let paso = 0;
+            sube.concat(baja).forEach(p => poner(p, paso++));
+            arp.concat(arpVuelta, [0]).forEach(p => poner(p, paso++, "arp"));
+            return { chips, notas };
+        }
+        // Terceras: grupos subiendo hasta la 9ª, remate en la 8ª; silencio hasta completar el compás;
+        // la bajada arranca en el tiempo 1, llega hasta la 7ª de abajo y remata en la tónica.
+        const conj = d.t === 1;
+        const subida = [], bajada = [];
+        for (let g = 0; g <= 6; g++) subida.push(conj ? [g, g + 1, g + 2] : [g, g + 2]);
+        subida.push([7]);
+        for (let g = 7; g >= 1; g--) bajada.push(conj ? [g, g - 1, g - 2] : [g, g - 2]);
+        bajada.push([0]);
+        let paso = 0;
+        subida.forEach(gr => gr.forEach((p, k) => poner(p, paso++, k === gr.length - 1 ? "fin-grupo" : "")));
+        if (paso % npc !== 0) {
+            chips.push({ texto: "silencio", clase: "silencio fin-grupo" });
+            paso = Math.ceil(paso / npc) * npc;
+        }
+        bajada.forEach(gr => gr.forEach((p, k) => poner(p, paso++, k === gr.length - 1 ? "fin-grupo" : "")));
+        return { chips, notas };
     }
 
     // =========================================================
@@ -510,21 +598,19 @@
         const eventosNota = []; // [tiempo, índice de casilla]
 
         if (conEscala) {
-            const sec = secuenciaGrados(d.cat);
-            // el arpegio arranca desde la tónica de abajo (no se repite): 3-5-8-5-3-1
-            const lista = sec.escala.concat(sec.arpegio);
+            const npc = 4 * d.nivel.figura;
+            const sec = secuencia(d, npc);
             const tonica = tonicaReal(d.notaEscrita);
-            const notasPorCompas = 4 * d.nivel.figura;
-            const totalNotas = lista.length;
-            const compases = Math.ceil(totalNotas / notasPorCompas);
+            const ultimoPaso = sec.notas[sec.notas.length - 1].paso;
+            const compases = Math.ceil((ultimoPaso + 1) / npc);
             totalPulsos = 4 + compases * 4;
-            lista.forEach((pos, k) => {
-                const t = inicio + entrada + k * paso;
-                const esUltima = k === totalNotas - 1;
-                const finCompas = inicio + entrada + compases * 4 * pulso;
+            const finCompas = inicio + entrada + compases * 4 * pulso;
+            sec.notas.forEach((n, k) => {
+                const t = inicio + entrada + n.paso * paso;
+                const esUltima = k === sec.notas.length - 1;
                 const dur = esUltima ? (finCompas - t) * 0.95 : paso * 0.92;
-                nota(c, salida, tonica + d.cat.grados[pos], t, dur);
-                eventosNota.push([t, k]);
+                nota(c, salida, tonica + semitonos(n.pos, d.cat), t, dur);
+                eventosNota.push([t, n.chip]);
             });
         } else {
             totalPulsos = Infinity;
@@ -629,16 +715,15 @@
         document.getElementById('etiquetaCat').innerText = d.cat.nombre;
         document.getElementById('nivel').innerText = d.nivel.nombre;
         document.getElementById('nombreEscala').innerText = d.nombre + " " + d.cat.corto;
-        document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LA HICISTE" : "";
+        document.getElementById('tipoEj').innerText = d.tipo.nombre.toUpperCase();
+        document.getElementById('tipo').innerText = d.tipo.desc;
+        document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LO HICISTE" : "";
 
-        const sec = secuenciaGrados(d.cat);
+        const sec = secuencia(d, 4 * d.nivel.figura);
         const cont = document.getElementById('notas');
         cont.innerHTML = "";
-        sec.escala.forEach(pos => {
-            const s = document.createElement('span'); s.innerText = etiquetaGrado(pos, d.cat); cont.appendChild(s);
-        });
-        sec.arpegio.forEach(pos => {
-            const s = document.createElement('span'); s.className = "arp"; s.innerText = etiquetaGrado(pos, d.cat); cont.appendChild(s);
+        sec.chips.forEach(ch => {
+            const s = document.createElement('span'); s.className = ch.clase.trim(); s.innerText = ch.texto; cont.appendChild(s);
         });
 
         const btnH = document.getElementById('btnHecha');
@@ -646,36 +731,47 @@
         document.getElementById('btnReiniciar').style.display = cuantas(hechas) >= TOTAL ? "block" : "none";
 
         const n = cuantas(hechas);
-        document.getElementById('txtProgreso').innerText = (vuelta > 1 ? "Vuelta " + vuelta + " · " : "") + n + " de " + TOTAL + " escalas";
+        document.getElementById('txtProgreso').innerText = (vuelta > 1 ? "Vuelta " + vuelta + " · " : "") + n + " de " + TOTAL + " ejercicios";
         document.getElementById('txtPorcentaje').innerText = Math.floor(n * 100 / TOTAL) + "%";
         document.getElementById('barra').style.width = (n * 100 / TOTAL) + "%";
 
         dibujarMapa();
     }
 
+    const abiertos = new Set();   // velocidades que el estudiante dejó abiertas en "Mi ruta"
     function dibujarMapa() {
         const mapa = document.getElementById('mapa');
         mapa.innerHTML = "";
+        const nivelVista = Math.floor(vista / POR_NIVEL);
         NIVELES.forEach((nv, a) => {
-            const bloque = document.createElement('div'); bloque.className = "bloque";
-            const h = document.createElement('h3'); h.innerText = (a + 1) + ". " + nv.nombre; bloque.appendChild(h);
+            const bloque = document.createElement('details'); bloque.className = "bloque";
+            if (a === nivelVista || abiertos.has(a)) bloque.open = true;
+            bloque.addEventListener('toggle', () => { if (bloque.open) abiertos.add(a); else abiertos.delete(a); });
+            let hechosNivel = 0;
+            for (let k = a * POR_NIVEL; k < (a + 1) * POR_NIVEL; k++) if (hechas[k]) hechosNivel++;
+            const h = document.createElement('summary');
+            h.innerHTML = "<span>" + (a + 1) + ". " + nv.nombre + "</span><span class='cuenta-nivel'>" + hechosNivel + " / " + POR_NIVEL + "</span>";
+            bloque.appendChild(h);
             CATEGORIAS.forEach((cat, b) => {
                 const f = document.createElement('div'); f.className = "fila-cat"; f.innerText = cat.nombre.toUpperCase(); bloque.appendChild(f);
-                const g = document.createElement('div'); g.className = "casillas";
-                cat.orden.forEach((o, k) => {
-                    const i = a * 36 + b * 12 + k;
-                    const bt = document.createElement('button');
-                    bt.innerText = o[1];
-                    const abierta = disponible(i);
-                    if (hechas[i]) bt.classList.add('hecha');
-                    else if (abierta) bt.classList.add('actual');
-                    if (i === vista) bt.classList.add('vista');
-                    if (hechas[i] || abierta) {
-                        bt.onclick = () => { detener(); vista = i; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); };
-                    }
-                    g.appendChild(bt);
+                TIPOS.forEach((tp, t) => {
+                    const ft = document.createElement('div'); ft.className = "fila-tipo"; ft.innerText = tp.nombre.toUpperCase(); bloque.appendChild(ft);
+                    const g = document.createElement('div'); g.className = "casillas";
+                    cat.orden.forEach((o, k) => {
+                        const i = a * POR_NIVEL + b * 36 + t * 12 + k;
+                        const bt = document.createElement('button');
+                        bt.innerText = o[1];
+                        const abierta = disponible(i);
+                        if (hechas[i]) bt.classList.add('hecha');
+                        else if (abierta) bt.classList.add('actual');
+                        if (i === vista) bt.classList.add('vista');
+                        if (hechas[i] || abierta) {
+                            bt.onclick = () => { detener(); vista = i; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+                        }
+                        g.appendChild(bt);
+                    });
+                    bloque.appendChild(g);
                 });
-                bloque.appendChild(g);
             });
             mapa.appendChild(bloque);
         });
@@ -684,25 +780,38 @@
     document.getElementById('btnHecha').onclick = () => {
         detener();
         const d = datosEscala(vista);
-        const a = Math.floor(vista / 36);
+        const a = Math.floor(vista / POR_NIVEL);
         const mayoresAntes = mayoresCompletas(a);
+        const menoresAntes = menoresCompletas(a);
         hechas[vista] = true;
         localStorage.setItem(CLAVE_HECHAS, aTexto(hechas));
         guardarEnHoja();
 
         let titulo = "¡Bien hecho!";
-        let texto = d.nombre + " " + d.cat.corto + " (" + d.nivel.nombre + ") lista.";
+        let texto = nombreEjercicio(d) + " (" + d.nivel.nombre + ") listo.";
+        const sig = a < NIVELES.length - 1 ? NIVELES[a + 1].nombre : null;
         if (cuantas(hechas) >= TOTAL) {
-            titulo = "¡RUTA 216 COMPLETA!";
-            texto = "Terminaste las 216 escalas. ¡Felicitaciones! Cuando quieras, puedes volver a empezar la ruta desde el comienzo.";
-        } else if (nivelCompleto(a)) {
-            titulo = "¡Velocidad completa!";
-            texto = "Terminaste las 36 escalas en " + d.nivel.nombre + "." + (a < NIVELES.length - 1 ? " Se abrieron las mayores en " + NIVELES[a + 1].nombre + "." : "");
+            titulo = "¡ESCALANDO COMPLETO!";
+            texto = "Terminaste los 648 ejercicios. ¡Felicitaciones! Cuando quieras, puedes volver a empezar desde el comienzo.";
         } else if (!mayoresAntes && mayoresCompletas(a)) {
-            titulo = "¡Mayores completas!";
-            texto = "Se abrieron las 24 menores (eólicas y armónicas) en " + d.nivel.nombre + ". Hazlas en el orden que quieras.";
+            titulo = "¡Mayores completas en " + d.nivel.nombre + "!";
+            const partes = [];
+            if (sig) partes.push(mayoresAbiertas(a + 1) ? "Se abrieron las mayores en " + sig + "." : "Las mayores en " + sig + " se abren cuando termines las menores hasta " + d.nivel.nombre + ".");
+            if (menoresAbiertas(a)) partes.push("Ya puedes hacer las menores de " + d.nivel.nombre + " en el orden que quieras.");
+            else partes.push("Las menores de " + d.nivel.nombre + " se abren cuando termines las menores de " + NIVELES[a - 1].nombre + ".");
+            texto = partes.join(" ");
+        } else if (!menoresAntes && menoresCompletas(a)) {
+            titulo = "¡Menores completas en " + d.nivel.nombre + "!";
+            if (!sig) texto = "Terminaste todas las menores.";
+            else {
+                const partes = [];
+                if (menoresAbiertas(a + 1)) partes.push("Se abrieron las menores en " + sig + ".");
+                else partes.push("Las menores en " + sig + " se abren cuando termines las mayores de esa velocidad.");
+                if (a >= 1 && mayoresAbiertas(a + 1) && !mayoresCompletas(a + 1)) partes.unshift("Se abrieron las mayores en " + sig + ".");
+                texto = partes.join(" ");
+            }
         }
-        vista = siguiente();
+        vista = siguienteDesde(vista);
         document.getElementById('logroTitulo').innerText = titulo;
         document.getElementById('logroTexto').innerText = texto;
         document.getElementById('ventanaLogro').classList.add('visible');
@@ -741,29 +850,35 @@
     //   mientras no existan, el avance queda guardado en el celular)
     // =========================================================
     // Texto que ve el profesor en la hoja: velocidad actual y cuántas lleva de ella
+    // Texto que ve el profesor en la hoja: dónde va en mayores (columna E) y en menores (columna F)
     function resumen() {
         if (cuantas(hechas) >= TOTAL) return { nivel: "TERMINÓ", escala: "Ruta completa" };
-        let a = 0; while (a < NIVELES.length - 1 && nivelCompleto(a)) a++;
-        if (!mayoresCompletas(a)) {
-            const d = datosEscala(siguiente());
-            return { nivel: NIVELES[a].nombre, escala: d.nombre + " mayor" };
+        let am = 0; while (am < NIVELES.length && mayoresCompletas(am)) am++;
+        let an = 0; while (an < NIVELES.length && menoresCompletas(an)) an++;
+        let may = "Mayores: completas";
+        if (am < NIVELES.length) {
+            for (let i = am * POR_NIVEL; i < am * POR_NIVEL + 36; i++) if (!hechas[i]) { const d = datosEscala(i); may = "Mayores " + NIVELES[am].nombre + ": " + d.nombre + " · " + d.tipo.nombre; break; }
         }
-        let n = 0; for (let k = a * 36 + 12; k < a * 36 + 36; k++) if (hechas[k]) n++;
-        return { nivel: NIVELES[a].nombre, escala: "Menores " + n + " de 24" };
+        let men = "Menores: completas";
+        if (an < NIVELES.length) {
+            let n = 0; for (let k = an * POR_NIVEL + 36; k < (an + 1) * POR_NIVEL; k++) if (hechas[k]) n++;
+            men = "Menores " + NIVELES[an].nombre + ": " + (menoresAbiertas(an) ? n + " de 72" : "cerradas");
+        }
+        return { nivel: may, escala: men };
     }
 
     function guardarEnHoja() {
         const r = resumen();
         fetch(URL_SCRIPT, {
             method: "POST",
-            body: JSON.stringify({ action: "guardarProgreso", usuario, vuelta, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
+            body: JSON.stringify({ action: "guardarProgreso", formato: TOTAL, usuario, vuelta, hechas: aTexto(hechas), progreso: cuantas(hechas), instrumento, nivel: r.nivel, escala: r.escala })
         }).then(() => cargarRanking()).catch(() => {});
     }
 
     function cargarDeHoja() {
         fetch(URL_SCRIPT, {
             method: "POST",
-            body: JSON.stringify({ action: "progreso", usuario })
+            body: JSON.stringify({ action: "progreso", formato: TOTAL, usuario })
         })
         .then(r => r.json())
         .then(resp => {
@@ -795,7 +910,7 @@
     }
 
     // =========================================================
-    //  VOLVER A EMPEZAR (cuando terminan las 216)
+    //  VOLVER A EMPEZAR (cuando terminan los 648)
     // =========================================================
     function avisarReinicio() {
         return fetch(URL_SCRIPT, {
@@ -858,7 +973,7 @@
         nom.className = "nom"; nom.innerText = x.nombre + (x.yo ? " (tú)" : "");
         const num = document.createElement('span');
         num.className = "num";
-        num.innerHTML = x.hoy + " <small>" + (x.hoy === 1 ? "escala" : "escalas") + "</small>";
+        num.innerHTML = x.hoy + " <small>" + (x.hoy === 1 ? "ejercicio" : "ejercicios") + "</small>";
         div.append(pos, nom, num);
         return div;
     }
@@ -871,7 +986,7 @@
         const miPos = rankDatos.findIndex(x => x.yo);
 
         if (activos.length === 0) {
-            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado escalas hoy.<br>¡Sé el primero!</div>';
+            cont.innerHTML = '<div class="rk-vacio">Nadie ha marcado ejercicios hoy.<br>¡Sé el primero!</div>';
             btn.style.display = "none";
             return;
         }
