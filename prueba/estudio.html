@@ -256,8 +256,8 @@
         { id: "F",  nombre: "Instrumento en Fa",  ejemplos: "Corno francés", baja: 7 }
     ];
 
-    // Registro del trombón: la tónica real del ejemplo cae entre Lab2 y Sol3
-    const TONICA_MAS_GRAVE = 44;   // (las terceras bajan hasta 2 semitonos más y suben hasta la 9ª)
+    // Registro del saxo tenor (medio y medio alto): la tónica real del ejemplo cae entre Do3 y Si3
+    const TONICA_MAS_GRAVE = 48;   // (las terceras bajan hasta 2 semitonos más y suben hasta la 9ª)
 
     // Afinación del ejemplo: La = 442 Hz (los sonidos originales vienen en 440)
     const LA = 442;
@@ -515,8 +515,8 @@
         }
     }
 
-    // Descarga el sonido de trombón al abrir la página
-    fetch("../sonidos/trombon.json")
+    // Descarga el sonido de saxofón tenor al abrir la página
+    fetch("../sonidos/saxo_tenor.json")
         .then(r => r.json())
         .then(d => {
             datosSonido = d;
