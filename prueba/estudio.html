@@ -44,6 +44,14 @@
         .nivel { font-size: 1rem; font-weight: 700; margin: 6px 0 14px; color: #ffd166; }
         .nombre-escala { font-size: 2.2rem; font-weight: 700; margin: 4px 0 2px; line-height: 1.1; }
         .tipo-ej { display: inline-block; margin: 8px 0 6px; padding: 5px 12px; border-radius: 20px; background: #ffd166; color: #000; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; }
+        .como { margin: -6px 0 18px; text-align: left; background: #181818; border: 1px solid #2c2c2c; border-radius: 10px; }
+        .como summary { list-style: none; cursor: pointer; padding: 10px 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; color: #ffd166; text-align: center; }
+        .como summary::-webkit-details-marker { display: none; }
+        .como[open] summary { border-bottom: 1px solid #2c2c2c; }
+        .como .cuerpo { padding: 10px 14px 12px; font-size: 0.8rem; line-height: 1.5; color: #ccc; }
+        .como .cuerpo p { margin: 0 0 8px; }
+        .como .cuerpo b { color: #fff; }
+        .como .cuerpo .pasos { margin: 10px 0 0; padding-top: 8px; border-top: 1px dashed #333; font-size: 0.72rem; color: #999; }
         .tipo { font-size: 0.8rem; color: #bbb; margin-bottom: 18px; }
         .repaso { font-size: 0.7rem; color: #ffd166; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
 
@@ -163,6 +171,7 @@
         <div class="nombre-escala" id="nombreEscala">C mayor</div>
         <div class="tipo-ej" id="tipoEj">ESCALA</div>
         <div class="tipo" id="tipo">1 octava · subir, bajar y arpegio</div>
+        <details class="como" id="como"><summary>📖 ¿CÓMO SE TOCA?</summary><div class="cuerpo" id="comoTexto"></div></details>
 
         <div class="cuenta" id="cuenta"></div>
         <div class="pulsos" id="pulsos"><span></span><span></span><span></span><span></span></div>
@@ -385,6 +394,27 @@
         return { i, nivel, cat, t, tipo: TIPOS[t], notaEscrita, nombre };
     }
     function nombreEjercicio(d) { return d.nombre + " " + d.cat.corto + " · " + d.tipo.nombre; }
+
+    // Explicación corta del ejercicio para quien no lo conoce
+    function comoSeToca(d) {
+        const una = d.nivel.figura === 1 ? "una nota por tiempo (negras)" : "dos notas por tiempo (corcheas)";
+        const arm = d.cat.corto === "menor armónica";
+        let t;
+        if (d.t === 0) {
+            t = "<p>Toca la escala <b>una octava, subiendo y bajando</b>, y sin parar sigue con el <b>arpegio</b>: "
+              + (arm ? "1 - 3 - 5 - 7↑ - 8 - 7↑ - 5 - 3 - 1 (el 7↑ es la séptima alterada)." : "1 - 3 - 5 - 8 - 5 - 3 - 1.") + "</p>";
+        } else if (d.t === 1) {
+            t = "<p>Grupos de <b>tres notas seguidas</b>, avanzando de a una: <b>1-2-3 · 2-3-4 · 3-4-5…</b> hasta <b>7-8-9</b> y rematas en la <b>8</b>.</p>"
+              + "<p>Silencio hasta completar el compás. En el tiempo 1 bajas igual: <b>8-7-6 · 7-6-5…</b> hasta <b>2-1-7</b> (la séptima de abajo) y rematas en la <b>1</b>.</p>";
+        } else {
+            t = "<p>Saltos de <b>tercera</b>, avanzando de a una: <b>1-3 · 2-4 · 3-5…</b> hasta <b>7-9</b> y rematas en la <b>8</b>.</p>"
+              + "<p>Silencio hasta completar el compás. En el tiempo 1 bajas igual: <b>8-6 · 7-5 · 6-4…</b> hasta <b>2-7</b> (la séptima de abajo) y rematas en la <b>1</b>.</p>";
+        }
+        t += "<p>Todo a " + una + ", con el metrónomo a " + d.nivel.bpm + ". Los números son los grados de la escala de <b>" + d.nombre + " " + d.cat.corto + "</b>"
+           + (arm ? "; en la armónica el 7 siempre va alterado (7↑)" : "") + ".</p>";
+        const pasos = "<div class='pasos'><b>Cómo usar:</b> toca <b>▶ Escuchar ejemplo</b> (suena 1 compás de cencerro y entra el saxo). Practícalo con <b>Solo metrónomo</b> y, cuando te salga bien a esa velocidad, marca <b>✓ Ya la toqué</b>.</div>";
+        return t + pasos;
+    }
 
     // Semitonos desde la tónica para un grado (0 = tónica, 7 = octava, 8 = novena, -1 = séptima de abajo)
     function semitonos(pos, cat) {
@@ -717,6 +747,7 @@
         document.getElementById('nombreEscala').innerText = d.nombre + " " + d.cat.corto;
         document.getElementById('tipoEj').innerText = d.tipo.nombre.toUpperCase();
         document.getElementById('tipo').innerText = d.tipo.desc;
+        document.getElementById('comoTexto').innerHTML = comoSeToca(d);
         document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LO HICISTE" : "";
 
         const sec = secuencia(d, 4 * d.nivel.figura);

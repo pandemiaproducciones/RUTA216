@@ -44,6 +44,14 @@
         .nivel { font-size: 1rem; font-weight: 700; margin: 6px 0 14px; color: #ffd166; }
         .nombre-escala { font-size: 2.2rem; font-weight: 700; margin: 4px 0 2px; line-height: 1.1; }
         .tipo-ej { display: inline-block; margin: 8px 0 6px; padding: 5px 12px; border-radius: 20px; background: #ffd166; color: #000; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; }
+        .como { margin: -6px 0 18px; text-align: left; background: #181818; border: 1px solid #2c2c2c; border-radius: 10px; }
+        .como summary { list-style: none; cursor: pointer; padding: 10px 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; color: #ffd166; text-align: center; }
+        .como summary::-webkit-details-marker { display: none; }
+        .como[open] summary { border-bottom: 1px solid #2c2c2c; }
+        .como .cuerpo { padding: 10px 14px 12px; font-size: 0.8rem; line-height: 1.5; color: #ccc; }
+        .como .cuerpo p { margin: 0 0 8px; }
+        .como .cuerpo b { color: #fff; }
+        .como .cuerpo .pasos { margin: 10px 0 0; padding-top: 8px; border-top: 1px dashed #333; font-size: 0.72rem; color: #999; }
         .tipo { font-size: 0.8rem; color: #bbb; margin-bottom: 18px; }
         .repaso { font-size: 0.7rem; color: #ffd166; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
 
@@ -165,6 +173,7 @@
         <div class="nombre-escala" id="nombreEscala">C mayor</div>
         <div class="tipo-ej" id="tipoEj">ARPEGIO + CROMÁTICA</div>
         <div class="tipo" id="tipo">1 octava · subir, bajar y arpegio</div>
+        <details class="como" id="como"><summary>📖 ¿CÓMO SE TOCA?</summary><div class="cuerpo" id="comoTexto"></div></details>
 
         <div class="cuenta" id="cuenta"></div>
         <div class="pulsos" id="pulsos"><span></span><span></span><span></span><span></span></div>
@@ -319,6 +328,19 @@
     function nombreEjercicio(d) { return d.nombre + " mayor · " + d.ej.nombre; }
     function descripcion(d) {
         return d.nivel.figura === 1 ? "Arpegio en negras · cromática en corcheas" : "Arpegio en corcheas · cromática en semicorcheas";
+    }
+
+    // Explicación corta del ejercicio para quien no lo conoce
+    function comoSeToca(d) {
+        const larga = d.nivel.figura === 1 ? "negras" : "corcheas";
+        const corta = d.nivel.figura === 1 ? "corcheas" : "semicorcheas";
+        let t = "<p><b>1.</b> Arpegio <b>1 - 3 - 5 - 8 - 5 - 3</b> en " + larga + ".</p>"
+              + "<p><b>2.</b> Desde la tónica, <b>cromática subiendo</b> en " + corta + " hasta la octava (todos los semitonos).</p>"
+              + "<p><b>3.</b> Desde la octava, arpegio <b>8 - 5 - 3 - 1 - 3 - 5</b> en " + larga + ".</p>"
+              + "<p><b>4.</b> Desde la octava, <b>cromática bajando</b> en " + corta + " y terminas en la tónica (corta).</p>"
+              + "<p>Todo seguido, sin pausas, con el metrónomo a " + d.nivel.bpm + ". Los números son los grados de <b>" + d.nombre + " mayor</b>.</p>";
+        const pasos = "<div class='pasos'><b>Cómo usar:</b> toca <b>▶ Escuchar ejemplo</b> (suena 1 compás de cencerro y entra el saxo). Practícalo con <b>Solo metrónomo</b> y, cuando te salga bien a esa velocidad, marca <b>✓ Ya la toqué</b>.</div>";
+        return t + pasos;
     }
 
     // Arpegio + cromática (en semitonos desde la tónica; dur 1 = figura del arpegio, 0.5 = la mitad)
@@ -623,6 +645,7 @@
         document.getElementById('nombreEscala').innerText = d.nombre + " mayor";
         document.getElementById('tipoEj').innerText = d.ej.nombre.toUpperCase();
         document.getElementById('tipo').innerText = descripcion(d);
+        document.getElementById('comoTexto').innerHTML = comoSeToca(d);
         document.getElementById('repaso').innerText = hechas[vista] ? "REPASO · YA LO HICISTE" : "";
 
         const sec = secuencia(d);
